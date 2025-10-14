@@ -1,6 +1,6 @@
-// Fix: Implemented the Dashboard component to resolve parsing errors due to missing file content.
+
 import React from 'react';
-import type { Workflow, User, Message, Draft } from '../types';
+import type { Workflow, User, DunningPlan } from '../types';
 import { WorkflowTracker } from './WorkflowTracker';
 import { InspectorPanel } from './InspectorPanel';
 import { ChatInterface } from './ChatInterface';
@@ -8,112 +8,118 @@ import { MetricCard } from './MetricCard';
 import { DollarIcon } from './icons/DollarIcon';
 import { ClockIcon } from './icons/ClockIcon';
 import { CheckCircleIcon } from './icons/CheckCircleIcon';
-import { CalendarIcon } from './icons/CalendarIcon';
-import { CashFlowChart } from './CashFlowChart';
 import { WebhookListener } from './WebhookListener';
+import { CashAppPanel } from './CashAppPanel';
 
 interface DashboardProps {
-    workflows: Workflow[];
-    currentUser: User;
-    selectedWorkflowId: string | null;
-    onSelectWorkflow: (workflowId: string) => void;
-    selectedWorkflow: Workflow | null;
-    onAddTask: (workflowId: string, taskContent: string) => void;
-    onToggleTask: (workflowId: string, taskId: string) => void;
-    onAddNote: (workflowId: string, noteContent: string) => void;
-    onViewAuditTrail: (workflowId: string) => void;
-    messages: Message[];
-    onSendMessage: (prompt: string) => void;
-    onSendDraft: (draft: Draft) => void;
-    onAdjustDraftTone: (draft: Draft, instruction: string) => void;
-    onProposeSettlement: (workflowId: string, discount: number) => void;
-    scenarioWorkflows: Workflow[] | null;
-    onClearScenario: () => void;
-    onPaymentReceived: (workflowId: string) => void;
-    onNewInvoice: (invoiceData: object) => void;
+  workflows: Workflow[];
+  currentUser: User;
+  selectedWorkflowId: string | null;
+  onSelectWorkflow: (workflowId: string) => void;
+  onUpdateWorkflows: (updatedWorkflows: Workflow[]) => void;
+  isAutonomousMode: boolean;
+  dunningPlans: DunningPlan[];
+  onPaymentReceived: (workflowId: string) => void;
+  onNewInvoice: (invoiceData: any) => void;
 }
 
-export const Dashboard: React.FC<DashboardProps> = (props) => {
-    const { workflows } = props;
+export const Dashboard: React.FC<DashboardProps> = ({
+  workflows,
+  currentUser,
+  selectedWorkflowId,
+  onSelectWorkflow,
+  onUpdateWorkflows,
+  isAutonomousMode,
+  dunningPlans,
+  onPaymentReceived,
+  onNewInvoice,
+}) => {
+  const selectedWorkflow = workflows.find(w => w.id === selectedWorkflowId) || null;
 
-    // Calculate metrics
-    const totalOutstanding = workflows.filter(w => w.status !== 'Completed').reduce((sum, w) => sum + w.amount, 0);
-    const overdueAmount = workflows.filter(w => w.status === 'Overdue').reduce((sum, w) => sum + w.amount, 0);
-    const collectedThisMonth = workflows.filter(w => {
-        if (w.status !== 'Completed' || !w.paymentDate) return false;
-        const paymentDate = new Date(w.paymentDate);
-        const today = new Date();
-        return paymentDate.getMonth() === today.getMonth() && paymentDate.getFullYear() === today.getFullYear();
-    }).reduce((sum, w) => sum + w.amount, 0);
+  // Calculate metrics
+  const outstandingWorkflows = workflows.filter(w => w.status !== 'Completed');
+  const totalOutstanding = outstandingWorkflows.reduce((sum, w) => sum + w.amount, 0);
+  const overdueWorkflows = workflows.filter(w => w.status === 'Overdue');
+  const totalOverdue = overdueWorkflows.reduce((sum, w) => sum + w.amount, 0);
+
+  const daysOverdue = overdueWorkflows.map(w => {
+    const dueDate = new Date(w.dueDate);
+    const today = new Date();
+    // Adjust for timezone to avoid off-by-one day errors
+    const due = new Date(Date.UTC(dueDate.getUTCFullYear(), dueDate.getUTCMonth(), dueDate.getUTCDate()));
+    const now = new Date(Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), today.getUTCDate()));
     
-    const overdueWorkflowsCount = workflows.filter(w => w.status === 'Overdue').length;
+    const timeDiff = now.getTime() - due.getTime();
+    return Math.max(0, Math.floor(timeDiff / (1000 * 3600 * 24)));
+  });
 
-    return (
-        <main className="flex flex-col gap-6">
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                 <MetricCard 
-                    title="Total Outstanding AR" 
-                    value={`$${totalOutstanding.toLocaleString(undefined, { maximumFractionDigits: 0 })}`}
-                    icon={<DollarIcon className="w-8 h-8 text-green-400"/>}
-                    tooltip="Total amount for all 'In Progress' and 'Overdue' invoices."
-                 />
-                 <MetricCard 
-                    title="Overdue AR" 
-                    value={`$${overdueAmount.toLocaleString(undefined, { maximumFractionDigits: 0 })}`}
-                    icon={<ClockIcon className="w-8 h-8 text-red-400"/>}
-                    tooltip="Total amount for all invoices past their due date."
-                 />
-                 <MetricCard 
-                    title="Collected (This Month)" 
-                    value={`$${collectedThisMonth.toLocaleString(undefined, { maximumFractionDigits: 0 })}`}
-                    icon={<CheckCircleIcon className="w-8 h-8 text-blue-400"/>}
-                    tooltip="Total amount collected in the current calendar month."
-                 />
-                 <MetricCard 
-                    title="Workflows Overdue" 
-                    value={overdueWorkflowsCount.toString()}
-                    icon={<CalendarIcon className="w-8 h-8 text-yellow-400"/>}
-                    tooltip="Total number of workflows currently overdue."
-                 />
-            </div>
+  const avgDaysOverdue = daysOverdue.length > 0
+    ? Math.round(daysOverdue.reduce((a, b) => a + b, 0) / daysOverdue.length)
+    : 0;
 
-            <div>
-                <CashFlowChart workflows={workflows} scenarioWorkflows={props.scenarioWorkflows} onClearScenario={props.onClearScenario} />
+  return (
+    <main className="flex flex-col gap-6 h-full">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <MetricCard
+          title="Total Outstanding AR"
+          value={`$${(totalOutstanding / 1000).toFixed(1)}k`}
+          icon={<DollarIcon className="w-8 h-8 text-blue-400" />}
+          tooltip={`Total Amount: $${totalOutstanding.toLocaleString()}`}
+        />
+        <MetricCard
+          title="Total Overdue AR"
+          value={`$${(totalOverdue / 1000).toFixed(1)}k`}
+          icon={<ClockIcon className="w-8 h-8 text-red-400" />}
+          tooltip={`Total Amount: $${totalOverdue.toLocaleString()}`}
+        />
+        <MetricCard
+          title="Overdue Invoices"
+          value={overdueWorkflows.length.toString()}
+          icon={<CheckCircleIcon className="w-8 h-8 text-yellow-400" />}
+          tooltip={`${overdueWorkflows.length} invoices are past their due date.`}
+        />
+         <MetricCard
+          title="Avg. Days Overdue"
+          value={`${avgDaysOverdue} days`}
+          icon={<ClockIcon className="w-8 h-8 text-orange-400" />}
+          tooltip={`Average time invoices have been overdue.`}
+        />
+      </div>
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 flex-1 min-h-0">
+        <div className="lg:col-span-3 flex flex-col gap-6">
+          <WorkflowTracker
+            workflows={workflows}
+            currentUser={currentUser}
+            onSelectWorkflow={onSelectWorkflow}
+            selectedWorkflowId={selectedWorkflowId}
+          />
+        </div>
+        <div className="lg:col-span-5">
+            <InspectorPanel
+                workflow={selectedWorkflow}
+                dunningPlans={dunningPlans}
+                workflows={workflows}
+                onUpdateWorkflows={onUpdateWorkflows}
+                currentUser={currentUser}
+                isAutonomousMode={isAutonomousMode}
+            />
+        </div>
+        <div className="lg:col-span-4 flex flex-col gap-6">
+          {currentUser.role !== 'Collector' ? (
+              <ChatInterface
+                workflows={workflows}
+                currentUser={currentUser}
+                dunningPlans={dunningPlans}
+                selectedWorkflow={selectedWorkflow}
+              />
+          ) : (
+            <div className="h-full flex flex-col gap-6">
+                <CashAppPanel workflows={workflows} onUpdateWorkflows={onUpdateWorkflows} />
+                <WebhookListener workflows={workflows} onPaymentReceived={onPaymentReceived} onNewInvoice={onNewInvoice} />
             </div>
-
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-                <div className="lg:col-span-3 h-[700px]">
-                    <WorkflowTracker 
-                        workflows={props.workflows} 
-                        currentUser={props.currentUser} 
-                        onSelectWorkflow={props.onSelectWorkflow}
-                        selectedWorkflowId={props.selectedWorkflowId}
-                    />
-                </div>
-                <div className="lg:col-span-5 h-[700px]">
-                    <InspectorPanel 
-                        workflow={props.selectedWorkflow}
-                        onAddTask={props.onAddTask}
-                        onToggleTask={props.onToggleTask}
-                        onAddNote={props.onAddNote}
-                        onViewAuditTrail={props.onViewAuditTrail}
-                        currentUser={props.currentUser}
-                        onProposeSettlement={props.onProposeSettlement}
-                    />
-                </div>
-                <div className="lg:col-span-4 h-[700px]">
-                    <ChatInterface 
-                        messages={props.messages}
-                        onSendMessage={props.onSendMessage}
-                        onSendDraft={props.onSendDraft}
-                        onAdjustDraftTone={props.onAdjustDraftTone}
-                    />
-                </div>
-            </div>
-            
-            <div className="grid grid-cols-1">
-                 <WebhookListener onPaymentReceived={props.onPaymentReceived} onNewInvoice={props.onNewInvoice} workflows={props.workflows} />
-            </div>
-        </main>
-    );
+          )}
+        </div>
+      </div>
+    </main>
+  );
 };

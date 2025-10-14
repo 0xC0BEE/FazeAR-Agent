@@ -1,134 +1,146 @@
 
 import React, { useState, useRef, useEffect } from 'react';
-import type { Message, Draft } from '../types';
 import { BotIcon } from './icons/BotIcon';
 import { UserIcon } from './icons/UserIcon';
 import { SparklesIcon } from './icons/SparklesIcon';
-import { PencilIcon } from './icons/PencilIcon';
 import { SpinnerIcon } from './icons/SpinnerIcon';
+import { runChatQuery } from '../services/geminiService';
+import type { Workflow, User, DunningPlan, ChatMessage } from '../types';
+import { v4 as uuidv4 } from 'uuid';
 
 interface ChatInterfaceProps {
-  messages: Message[];
-  onSendMessage: (prompt: string) => void;
-  onSendDraft: (draft: Draft) => void;
-  onAdjustDraftTone: (draft: Draft, instruction: string) => void;
+    workflows: Workflow[];
+    currentUser: User;
+    dunningPlans: DunningPlan[];
+    selectedWorkflow: Workflow | null;
 }
 
-const DraftMessage: React.FC<{ draft: Draft; onSend: () => void; onAdjust: (instruction: string) => void }> = ({ draft, onSend, onAdjust }) => {
-    const [isEditing, setIsEditing] = useState(false);
-    const [instruction, setInstruction] = useState('');
+export const ChatInterface: React.FC<ChatInterfaceProps> = ({ workflows, currentUser, dunningPlans, selectedWorkflow }) => {
+    const [messages, setMessages] = useState<ChatMessage[]>([]);
+    const [input, setInput] = useState('');
+    const [isLoading, setIsLoading] = useState(false);
+    const messagesEndRef = useRef<HTMLDivElement>(null);
 
-    const handleAdjust = () => {
-        if (instruction.trim()) {
-            onAdjust(instruction);
-            setInstruction('');
-            setIsEditing(false);
-        }
+    const scrollToBottom = () => {
+        messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
     };
 
+    useEffect(scrollToBottom, [messages]);
+    
+    useEffect(() => {
+        setMessages([
+            {
+                id: uuidv4(),
+                role: 'model',
+                content: `Hi ${currentUser.name}, I'm FazeAR. How can I help you with your accounts receivable today? You can ask me to summarize reports, find information, or analyze client data.`
+            }
+        ]);
+    }, [currentUser]);
+
+    const handleSendMessage = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!input.trim() || isLoading) return;
+
+        const newUserMessage: ChatMessage = { id: uuidv4(), role: 'user', content: input };
+        setMessages(prev => [...prev, newUserMessage]);
+        setInput('');
+        setIsLoading(true);
+        
+        const thinkingMessage: ChatMessage = { id: uuidv4(), role: 'model', content: '', isThinking: true };
+        setMessages(prev => [...prev, thinkingMessage]);
+
+        try {
+            const history = [...messages, newUserMessage];
+            const response = await runChatQuery(history, workflows, currentUser, dunningPlans);
+            const modelResponse: ChatMessage = {
+                id: uuidv4(),
+                role: 'model',
+                content: response.text,
+            };
+            setMessages(prev => [...prev.filter(m => !m.isThinking), modelResponse]);
+
+        } catch (error) {
+            console.error("Failed to get response from Gemini:", error);
+            const errorMessage: ChatMessage = {
+                id: uuidv4(),
+                role: 'model',
+                content: "Sorry, I'm having trouble connecting right now. Please try again later."
+            };
+            setMessages(prev => [...prev.filter(m => !m.isThinking), errorMessage]);
+        } finally {
+            setIsLoading(false);
+        }
+    };
+    
+    const quickPrompts = [
+        "Summarize the aging report.",
+        selectedWorkflow ? `What's the status of ${selectedWorkflow.clientName}?` : "Which client has the highest overdue balance?",
+        "Who is the top performing collector?",
+    ];
+
     return (
-        <div className="bg-slate-700/50 p-3 rounded-lg text-sm border border-slate-600">
-            <p className="text-xs text-slate-400 font-semibold mb-1">DRAFT EMAIL</p>
-            <p className="text-slate-400"><span className="font-semibold text-slate-300">To:</span> {draft.recipient}</p>
-            <p className="text-slate-400 mb-2"><span className="font-semibold text-slate-300">Subject:</span> {draft.subject}</p>
-            <div className="bg-slate-800/50 p-2 rounded-md whitespace-pre-wrap text-slate-300 mb-3">{draft.body}</div>
-            <div className="flex gap-2 items-center">
-                <button onClick={() => setIsEditing(!isEditing)} className="flex-1 text-xs font-semibold text-purple-300 hover:text-white bg-purple-900/50 hover:bg-purple-800 px-2 py-1.5 rounded-md transition-colors flex items-center justify-center gap-1">
-                    <PencilIcon className="w-3.5 h-3.5" /> Adjust Tone
-                </button>
-                <button onClick={onSend} className="flex-1 text-xs font-semibold bg-blue-600 hover:bg-blue-700 text-white px-2 py-1.5 rounded-md transition-colors">Send Email</button>
+        <div className="flex flex-col h-full bg-slate-800/50 rounded-lg shadow-lg border border-slate-700">
+            <div className="p-4 border-b border-slate-700 flex items-center gap-2">
+                <SparklesIcon className="w-5 h-5 text-purple-400" />
+                <h2 className="text-lg font-semibold text-white">Conversational Analytics</h2>
             </div>
-            {isEditing && (
-                <div className="mt-2 flex gap-2">
-                    <input 
-                        type="text"
-                        value={instruction}
-                        onChange={(e) => setInstruction(e.target.value)}
-                        placeholder="e.g., 'Make it more firm'"
-                        className="w-full bg-slate-900 border border-slate-600 rounded-lg px-3 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-blue-500"
-                    />
-                     <button onClick={handleAdjust} className="bg-slate-600 hover:bg-slate-500 text-white font-semibold px-3 rounded-md text-xs transition-colors">Adjust</button>
+            <div className="flex-1 p-4 overflow-y-auto space-y-4">
+                {messages.map((msg) => (
+                    <div key={msg.id} className={`flex items-start gap-3 ${msg.role === 'user' ? 'justify-end' : ''}`}>
+                        {msg.role === 'model' && (
+                            <div className="w-8 h-8 rounded-full bg-slate-700 flex items-center justify-center flex-shrink-0">
+                                <BotIcon className="w-5 h-5 text-purple-400" />
+                            </div>
+                        )}
+                        <div className={`max-w-md p-3 rounded-lg ${msg.role === 'model' ? 'bg-slate-700' : 'bg-blue-600 text-white'}`}>
+                            {msg.isThinking ? (
+                                <div className="flex items-center gap-2">
+                                    <SpinnerIcon className="w-4 h-4 animate-spin" />
+                                    <span className="text-sm text-slate-400">Thinking...</span>
+                                </div>
+                            ) : (
+                                <p className="text-sm whitespace-pre-wrap">{msg.content}</p>
+                            )}
+                        </div>
+                         {msg.role === 'user' && (
+                            <div className="w-8 h-8 rounded-full bg-slate-700 flex items-center justify-center flex-shrink-0">
+                                <UserIcon className="w-5 h-5 text-slate-400" />
+                            </div>
+                        )}
+                    </div>
+                ))}
+                <div ref={messagesEndRef} />
+            </div>
+            <div className="p-4 border-t border-slate-700">
+                 <div className="flex gap-2 mb-2">
+                    {quickPrompts.map(prompt => (
+                        <button 
+                            key={prompt}
+                            onClick={() => setInput(prompt)}
+                            className="px-2.5 py-1 text-xs font-semibold rounded-full bg-slate-700 hover:bg-slate-600 text-slate-300 transition-colors"
+                        >
+                            {prompt}
+                        </button>
+                    ))}
                 </div>
-            )}
+                <form onSubmit={handleSendMessage} className="flex gap-2">
+                    <input
+                        type="text"
+                        value={input}
+                        onChange={(e) => setInput(e.target.value)}
+                        placeholder="Ask the agent anything..."
+                        className="w-full bg-slate-900 border border-slate-600 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
+                        disabled={isLoading}
+                    />
+                    <button
+                        type="submit"
+                        disabled={isLoading || !input.trim()}
+                        className="bg-blue-600 text-white font-semibold px-4 py-2 rounded-lg text-sm transition-colors hover:bg-blue-700 disabled:bg-slate-600 disabled:cursor-not-allowed"
+                    >
+                        {isLoading ? <SpinnerIcon className="w-5 h-5 animate-spin" /> : 'Send'}
+                    </button>
+                </form>
+            </div>
         </div>
     );
-};
-
-export const ChatInterface: React.FC<ChatInterfaceProps> = ({ messages, onSendMessage, onSendDraft, onAdjustDraftTone }) => {
-  const [prompt, setPrompt] = useState('');
-  const messagesEndRef = useRef<null | HTMLDivElement>(null);
-
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  };
-
-  useEffect(() => {
-    scrollToBottom();
-  }, [messages]);
-
-  const handleSendMessage = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (prompt.trim()) {
-      onSendMessage(prompt);
-      setPrompt('');
-    }
-  };
-
-  return (
-    <div className="flex flex-col h-full bg-slate-800/50 rounded-lg shadow-lg border border-slate-700">
-      <div className="p-4 border-b border-slate-700 flex-shrink-0">
-        <h2 className="text-lg font-semibold text-white flex items-center gap-2">
-            <SparklesIcon className="w-6 h-6 text-purple-400" />
-            AI Assistant
-        </h2>
-      </div>
-      <div className="flex-1 p-4 overflow-y-auto space-y-4">
-        {messages.map(message => (
-          <div key={message.id} className={`flex items-start gap-3 ${message.sender === 'user' ? 'justify-end' : ''}`}>
-             {message.sender === 'bot' && (
-                <div className="w-8 h-8 rounded-full bg-slate-700 flex items-center justify-center flex-shrink-0">
-                    <BotIcon className="w-5 h-5 text-purple-400" isAutonomous={message.isAutonomous}/>
-                </div>
-             )}
-            <div className={`max-w-md rounded-lg p-3 ${message.sender === 'user' ? 'bg-blue-600 text-white' : 'bg-slate-700 text-slate-300'}`}>
-                {message.isLoading ? (
-                    <div className="flex items-center gap-2">
-                        <SpinnerIcon className="w-4 h-4 animate-spin"/>
-                        <span>Thinking...</span>
-                    </div>
-                ) : typeof message.content === 'string' ? (
-                    <p className="text-sm">{message.content}</p>
-                ) : (
-                    <DraftMessage 
-                        draft={message.content} 
-                        onSend={() => onSendDraft(message.content as Draft)}
-                        onAdjust={(instruction) => onAdjustDraftTone(message.content as Draft, instruction)}
-                    />
-                )}
-            </div>
-             {message.sender === 'user' && (
-                <div className="w-8 h-8 rounded-full bg-slate-700 flex items-center justify-center flex-shrink-0">
-                    <UserIcon className="w-5 h-5 text-slate-400" />
-                </div>
-             )}
-          </div>
-        ))}
-        <div ref={messagesEndRef} />
-      </div>
-      <div className="p-4 border-t border-slate-700 flex-shrink-0">
-        <form onSubmit={handleSendMessage} className="flex gap-2">
-          <input
-            type="text"
-            value={prompt}
-            onChange={e => setPrompt(e.target.value)}
-            placeholder="Ask the agent a question..."
-            className="w-full bg-slate-900 border border-slate-600 rounded-lg px-4 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
-          />
-          <button type="submit" className="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-4 py-2 rounded-lg text-sm transition-colors">
-            Send
-          </button>
-        </form>
-      </div>
-    </div>
-  );
 };

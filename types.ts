@@ -1,9 +1,19 @@
 
-export interface Task {
+export interface User {
   id: string;
-  content: string;
-  assignee: string;
-  isCompleted: boolean;
+  name: string;
+  role: 'Collector' | 'Manager' | 'Admin';
+}
+
+export interface DunningStep {
+  day: number;
+  action: 'EMAIL' | 'CALL';
+  template: string;
+}
+
+export interface DunningPlan {
+  name: string;
+  steps: DunningStep[];
 }
 
 export interface Note {
@@ -13,7 +23,14 @@ export interface Note {
   timestamp: string;
 }
 
-export interface CommunicationHistory {
+export interface Task {
+  id: string;
+  content: string;
+  assignee: string;
+  isCompleted: boolean;
+}
+
+export interface Communication {
   stepName: string;
   timestamp: string;
 }
@@ -31,45 +48,23 @@ export interface Workflow {
   createdDate: string;
   dueDate: string;
   paymentDate?: string;
-  status: 'Overdue' | 'In Progress' | 'Completed';
+  status: 'In Progress' | 'Overdue' | 'Completed';
   assignee: string;
   dunningPlanName: string;
   notes: Note[];
   tasks: Task[];
-  communicationHistory: CommunicationHistory[];
+  communicationHistory: Communication[];
   auditTrail: AuditEntry[];
   paymentUrl: string;
 }
 
-export interface User {
-  id: string;
-  name: string;
-  role: 'Collector' | 'Manager' | 'Admin';
-}
-
-export interface DunningPlanStep {
-    day: number;
-    action: 'EMAIL' | 'CALL';
-    template: string;
-}
-
-export interface DunningPlan {
-  name: string;
-  steps: DunningPlanStep[];
-}
-
-export interface Draft {
-    type: 'draft';
-    recipient: string;
-    subject: string;
-    body: string;
-    workflowId: string;
-}
-
-export interface Message {
-  id: string;
-  sender: 'user' | 'bot';
-  content: string | Draft;
-  isLoading?: boolean;
-  isAutonomous?: boolean;
+export interface ChatMessage {
+    id: string;
+    role: 'user' | 'model' | 'system';
+    content: string;
+    isThinking?: boolean;
+    relatedDocuments?: {
+        title: string;
+        uri: string;
+    }[];
 }
