@@ -1,44 +1,36 @@
-
 # FazeAR: AI Accounts Receivable Agent
 
-Welcome to FazeAR, a powerful, AI-native prototype for modern Accounts Receivable (AR) management. This application demonstrates how a sophisticated, conversational AI agent, powered by the Gemini API, can serve as the central command center for the entire AR workflow, transforming a traditionally manual process into a seamless and strategic conversation.
+FazeAR is a sophisticated prototype of an AI-native Accounts Receivable (AR) management platform. It demonstrates how a powerful, conversational AI agent can be placed at the center of a complex business workflow, transforming manual tasks into strategic conversations.
+
+The application provides a comprehensive toolset for AR specialists to manage the entire invoice lifecycle, from creation and tracking to client communication and payment processing. The core innovation is its chat-first interface, where users can command the AI agent to perform tasks, analyze data, and generate reports using natural language.
 
 ---
 
-## Project Overview
-
-FazeAR is designed to augment the capabilities of AR professionals—Collectors, Managers, and Admins. Instead of navigating complex menus and forms, users interact with the FazeAR agent through a natural language chat interface to manage invoices, communicate with clients, analyze financial data, and even automate complex tasks like payment matching and strategic planning.
-
-The application is built with a modern tech stack and showcases a robust, tool-based AI architecture that allows the agent to reliably interact with the application's data and functions.
-
 ## Key Features
 
-### Core Application
--   **Role-Based Interface:** The UI and available actions adapt to the user's role (Collector, Manager, Admin).
--   **Comprehensive Workflow Management:** A clean "list-detail" view for tracking and managing every invoice from creation to payment.
--   **Detailed Inspector Panel:** A central hub to view and manage notes, tasks, communication history, and the full audit trail for any selected workflow.
--   **End-to-End Simulation:** On-demand webhook simulation to create new invoices (from "QuickBooks") or process payments (from "Stripe"), allowing for a full lifecycle demo.
--   **Client Payment Portal:** A simple, secure, client-facing webpage for viewing and paying invoices.
+### 1. Unified Dashboard
+A central hub for daily AR operations, providing a role-based, at-a-glance view of key financial metrics and access to all primary tools.
 
-### Advanced AI Capabilities
--   **Conversational Command Center:** The central chat interface is the primary way to interact with the application. The agent understands complex, multi-step commands.
--   **AI-Powered Strategic Planning:** Ask the agent "what-if" questions about cash flow (e.g., "What if this client pays 30 days late?") and see the forecast chart update in real-time.
--   **Proactive & Autonomous Operation:** When enabled, the agent runs its own daily cycle to execute routine collection tasks and even propose strategic improvements for manager approval.
--   **Human-AI Collaboration:** The agent can draft professional emails and then iteratively refine them based on user feedback (e.g., "Make this more formal").
--   **Multimodal Document Analysis:** Upload a document (like a PO or invoice) and ask the agent questions about its contents.
--   **Predictive Payment Insights:** The agent can analyze a client's payment history to predict the risk of a late payment on a current invoice.
--   **Interactive Negotiation:** Authorized users can instruct the agent to propose pre-approved settlement offers to clients with long-overdue accounts.
--   **AI-Powered Cash Application:** The agent can parse remittance information from pasted text and automatically match payments to open invoices, presenting the matches for one-click user confirmation.
+### 2. Conversational AI Agent
+-   **Tool-Based Architecture:** The agent uses a sophisticated function-calling architecture to understand commands and take direct action within the application.
+-   **Conversational Analytics:** Users can ask natural language questions about their AR data and get instant, summarized answers.
+-   **Direct Action:** Command the agent to perform tasks like adding notes or running "what-if" cash flow scenarios.
 
-## User Roles
+### 3. Interactive Workflow Management
+-   **Workflow Tracker:** A filterable and searchable list of all outstanding invoices with infinite scroll.
+-   **Workflow Inspector:** A detailed "list-detail" view showing all information for a selected workflow.
 
--   **Collector:** Focused on day-to-day operations. Can manage assigned workflows, add notes and tasks, and use the AI agent to draft communications.
--   **Manager:** Has all collector abilities, plus access to analytics dashboards, performance reports, and the ability to enable Autonomous Mode for the agent.
--   **Admin:** Has full access to all features, including system settings and dunning plan configurations.
+### 4. Advanced Enterprise Workflows
+-   **AI-Powered Cash Application:** Paste unstructured text from a remittance advice, and the AI agent will parse it, automatically match payments to open invoices, and present them for one-click confirmation.
+-   **Automated Deductions & Dispute Management:** The system automatically detects short payments, and the AI agent logs a formal "Dispute Case" against the invoice, initiating the resolution process.
 
-## Future Roadmap: Enterprise-Grade Capabilities
+### 5. Advanced Analytics & Reporting
+-   **Dedicated Analytics View:** For Managers and Admins, a separate screen provides deeper insights into the company's financial health.
+-   **Invoice Aging & Collector Performance Reports:** Detailed, real-time reports on AR health and team performance.
 
-The FazeAR platform is built on a scalable foundation. The next phase of development will focus on tackling the most complex challenges in AR:
+### 6. Simulation Environment
+-   **Webhook Listener:** Simulate events from external systems like QuickBooks (new invoice) and Stripe (payment received).
+-   **Client Payment Portal:** A simple, secure, client-facing webpage to simulate a customer paying an invoice.
 
--   **Automated Deductions & Dispute Management:** Empowering the agent to identify, categorize, and manage customer short payments and disputes.
--   **Interactive Client Collaboration Portal:** Transforming the payment portal into a secure, two-way communication hub where clients can interact directly with a client-facing version of the FazeAR agent.
+### 7. Role-Based Access Control
+-   **Collector, Manager, Admin:** The UI intelligently adapts, showing or hiding features based on the logged-in user's role.

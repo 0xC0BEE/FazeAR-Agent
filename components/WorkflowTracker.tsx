@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import type { Workflow, User } from '../types';
 import { WorkflowCard } from './WorkflowCard';
 import { SearchIcon } from './icons/SearchIcon';
+import { SpinnerIcon } from './icons/SpinnerIcon';
 
 interface WorkflowTrackerProps {
   workflows: Workflow[];
@@ -10,10 +11,17 @@ interface WorkflowTrackerProps {
   selectedWorkflowId: string | null;
 }
 
+const INITIAL_LOAD_COUNT = 12;
+const BATCH_SIZE = 8;
+
 export const WorkflowTracker: React.FC<WorkflowTrackerProps> = ({ workflows, currentUser, onSelectWorkflow, selectedWorkflowId }) => {
   const [activeTab, setActiveTab] = useState<'my' | 'all'>('my');
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<'all' | 'Overdue' | 'In Progress'>('all');
+  const [visibleCount, setVisibleCount] = useState(INITIAL_LOAD_COUNT);
+
+  const loaderRef = useRef<HTMLDivElement>(null);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
 
   const myWorkflows = workflows.filter(w => w.assignee === currentUser.name && w.status !== 'Completed');
   const allWorkflows = workflows.filter(w => w.status !== 'Completed');
@@ -24,7 +32,58 @@ export const WorkflowTracker: React.FC<WorkflowTrackerProps> = ({ workflows, cur
     const matchesSearch = w.clientName.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesStatus = statusFilter === 'all' || w.status === statusFilter;
     return matchesSearch && matchesStatus;
+  }).sort((a, b) => {
+      const statusOrder = { 'Overdue': 1, 'In Progress': 2 };
+      if (statusOrder[a.status] !== statusOrder[b.status]) {
+          return statusOrder[a.status] - statusOrder[b.status];
+      }
+      return new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime()
   });
+
+  // Reset visible count and scroll to top when filters change
+  useEffect(() => {
+    setVisibleCount(INITIAL_LOAD_COUNT);
+    if (scrollContainerRef.current) {
+      scrollContainerRef.current.scrollTop = 0;
+    }
+  }, [activeTab, searchTerm, statusFilter]);
+
+  // Infinite scroll observer
+  useEffect(() => {
+    const scrollContainer = scrollContainerRef.current;
+    if (!scrollContainer) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting && visibleCount < filteredWorkflows.length) {
+          setVisibleCount(prevCount => Math.min(prevCount + BATCH_SIZE, filteredWorkflows.length));
+        }
+      },
+      { 
+        root: scrollContainer,
+        rootMargin: '0px 0px 200px 0px', // Trigger when loader is 200px from bottom
+        threshold: 0.01 
+      }
+    );
+
+    const loader = loaderRef.current;
+    if (loader) {
+      observer.observe(loader);
+    }
+
+    return () => {
+      if (loader) {
+        observer.unobserve(loader);
+      }
+    };
+  }, [visibleCount, filteredWorkflows.length]);
+
+  const visibleWorkflows = filteredWorkflows.slice(0, visibleCount);
+
+  const getStatusText = () => {
+    if (statusFilter === 'all') return '';
+    return statusFilter.toLowerCase();
+  }
 
   return (
     <div className="flex flex-col h-full bg-slate-800/50 rounded-lg shadow-lg border border-slate-700">
@@ -73,27 +132,28 @@ export const WorkflowTracker: React.FC<WorkflowTrackerProps> = ({ workflows, cur
             </button>
         </nav>
       </div>
-      <div className="flex-1 p-4 overflow-y-auto space-y-2">
-        {filteredWorkflows.length > 0 ? (
-            filteredWorkflows
-                .sort((a, b) => {
-                    const statusOrder = { 'Overdue': 1, 'In Progress': 2 };
-                    if (statusOrder[a.status] !== statusOrder[b.status]) {
-                        return statusOrder[a.status] - statusOrder[b.status];
-                    }
-                    return new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime()
-                })
-                .map(workflow => (
-                    <WorkflowCard 
-                        key={workflow.id}
-                        workflow={workflow}
-                        isSelected={workflow.id === selectedWorkflowId}
-                        onSelect={onSelectWorkflow}
-                    />
-                ))
+      <div ref={scrollContainerRef} className="flex-1 p-4 overflow-y-auto space-y-2">
+        <div className="px-1 pb-2 text-xs text-slate-400 italic">
+            Showing {filteredWorkflows.length} {getStatusText()} workflow{filteredWorkflows.length !== 1 && 's'} in "{activeTab === 'my' ? 'My Queue' : 'All Active'}".
+        </div>
+        {visibleWorkflows.length > 0 ? (
+            visibleWorkflows.map(workflow => (
+                <WorkflowCard 
+                    key={workflow.id}
+                    workflow={workflow}
+                    isSelected={workflow.id === selectedWorkflowId}
+                    onSelect={onSelectWorkflow}
+                />
+            ))
         ) : (
             <div className="text-center py-10 text-slate-400">
                 <p>No workflows match your criteria.</p>
+            </div>
+        )}
+        
+        {visibleCount < filteredWorkflows.length && (
+            <div ref={loaderRef} className="flex justify-center items-center p-2">
+                <SpinnerIcon className="w-5 h-5 animate-spin text-slate-500"/>
             </div>
         )}
       </div>

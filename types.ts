@@ -1,8 +1,37 @@
-
 export interface User {
   id: string;
   name: string;
   role: 'Collector' | 'Manager' | 'Admin';
+}
+
+export interface AuditLogEntry {
+  timestamp: string;
+  activity: string;
+  details: string;
+}
+
+export interface Dispute {
+  id: string;
+  amount: number;
+  reason: string;
+  status: 'Open' | 'Resolved' | 'Pending';
+  dateCreated: string;
+}
+
+export interface Workflow {
+  id: string;
+  clientName: string;
+  amount: number;
+  dueDate: string;
+  status: 'In Progress' | 'Overdue' | 'Completed';
+  assignee: string;
+  dunningPlan: string;
+  lastContacted: string | null;
+  paymentDate?: string;
+  createdDate: string;
+  auditTrail: AuditLogEntry[];
+  externalId: string;
+  disputes?: Dispute[];
 }
 
 export interface DunningStep {
@@ -16,55 +45,25 @@ export interface DunningPlan {
   steps: DunningStep[];
 }
 
-export interface Note {
+export interface FunctionCall {
+  name: string;
+  args: Record<string, any>;
   id: string;
-  content: string;
-  author: string;
-  timestamp: string;
 }
 
-export interface Task {
+export interface FunctionResponse {
   id: string;
-  content: string;
-  assignee: string;
-  isCompleted: boolean;
-}
-
-export interface Communication {
-  stepName: string;
-  timestamp: string;
-}
-
-export interface AuditEntry {
-  timestamp: string;
-  activity: string;
-  details: string;
-}
-
-export interface Workflow {
-  id: string;
-  clientName: string;
-  amount: number;
-  createdDate: string;
-  dueDate: string;
-  paymentDate?: string;
-  status: 'In Progress' | 'Overdue' | 'Completed';
-  assignee: string;
-  dunningPlanName: string;
-  notes: Note[];
-  tasks: Task[];
-  communicationHistory: Communication[];
-  auditTrail: AuditEntry[];
-  paymentUrl: string;
+  name: string;
+  response: {
+    result: any;
+  };
 }
 
 export interface ChatMessage {
     id: string;
-    role: 'user' | 'model' | 'system';
-    content: string;
+    role: 'user' | 'model';
+    content?: string;
     isThinking?: boolean;
-    relatedDocuments?: {
-        title: string;
-        uri: string;
-    }[];
+    toolCall?: FunctionCall;
+    toolResponse?: FunctionResponse;
 }

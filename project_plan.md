@@ -1,121 +1,70 @@
+# FazeAR Agent: Project Plan
 
-# FazeAR: AI Accounts Receivable Agent - Project Plan
-
-This document outlines the development plan and progress for the FazeAR project, an AI-powered Accounts Receivable management platform.
-
----
-
-## ✅ Phase 1: Foundational UI & Core Logic (Complete)
-
-**Goal:** Establish the basic application structure, data models, and a user interface for managing AR workflows.
-
--   [x] **UI Scaffolding:** Create the main application layout (`App.tsx`), including a header and a main content area.
--   [x] **Data Models:** Define core TypeScript types for `Workflow`, `User`, `Note`, `Task`, and `DunningPlan`.
--   [x] **Workflow Tracker:** Build a component to display a list of all active AR workflows.
--   [x] **Inspector Panel:** Create a detailed view to inspect a selected workflow's notes, tasks, and history.
--   [x] **Role-Based Access Control (RBAC):** Implement a user-switching mechanism and adapt the UI based on the user's role (Collector, Manager, Admin).
--   [x] **Basic State Management:** Implement client-side state for all workflows, users, and UI interactions.
+This document outlines the phased development plan for the FazeAR AI Agent application.
 
 ---
 
-## ✅ Phase 2: AI Integration & Basic Chat (Complete)
+### Phase 1: Foundational UI & Data Models (COMPLETE)
+**Goal:** Establish the basic structure of the application, including core components, data models, and a professional, responsive layout.
 
-**Goal:** Integrate the Gemini API to create a basic conversational AI assistant.
-
--   [x] **Gemini Service Layer:** Create a service file to handle all API calls to the Gemini API, following best practices.
--   [x] **Conversational Chat Interface:** Build a dedicated chat UI where users can have a basic conversation with the AI agent.
--   [x] **AI-Powered Analytics Insights:** Enable the agent to answer basic questions about the application's data (e.g., "Summarize the aging report").
--   [x] **Manual AI-Powered Actions:** Implement initial AI-powered actions, such as drafting an email based on a user prompt.
-
----
-
-## ✅ Phase 3: Architectural Upgrade - The Tool-Based Agent (Complete)
-
-**Goal:** Transform the AI from a simple chatbot into a true, intelligent agent using Gemini's Function Calling feature.
-
--   [x] **Overhaul AI Service:** Refactor the Gemini service to use a single, powerful `runAgent` function that manages a multi-turn, function-calling conversation.
--   [x] **Define Agent Tools:** Define a comprehensive suite of function declarations for tools the agent can use, such as `add_note`, `add_task`, `draft_email`, `send_email`, etc.
--   [x] **Implement Agent Orchestrator:** Build the core logic in `App.tsx` to manage the back-and-forth between the user, the agent, and its tools.
--   [x] **Centralize Actions:** Refactor UI elements (e.g., "Add Note" button) to trigger conversational commands for the agent, rather than manipulating state directly.
+-   [x] **UI Structure:** Create a main application shell with a header, dashboard area, and modals.
+-   [x] **Data Models:** Define TypeScript types for `Workflow`, `User`, `DunningPlan`, and other core entities.
+-   [x] **Header Component:** Build a functional header with user switching and navigation.
+-   [x] **Workflow Tracker:** Implement a list view to display all active workflows.
+-   [x] **Workflow Card:** Design a component to show summary information for each workflow.
+-   [x] **Inspector Panel:** Create a detail panel to show more information about a selected workflow.
+-   [x] **Mock Data:** Populate the application with realistic sample data for development and demonstration.
 
 ---
 
-## ✅ Phase 4: AI-Powered Strategic Planning (Complete)
+### Phase 2: Core AR Functionality (COMPLETE)
+**Goal:** Implement the essential actions an AR specialist needs to manage their workflows.
 
-**Goal:** Empower the agent to assist with strategic financial forecasting.
-
--   [x] **"What-If" Scenario Tool:** Create a `run_cash_flow_scenario` tool that allows the agent to calculate the impact of hypothetical payment scenarios.
--   [x] **Dynamic Chart Updates:** Connect the agent's tool to the `CashFlowChart` to provide immediate, visual feedback on "what-if" questions.
--   [x] **Clear Scenario Tool:** Implement a `clear_cash_flow_scenario` tool for the agent to revert the chart to its default state.
-
----
-
-## ✅ Phase 5: Agent Autonomy & Proactive Actions (Complete)
-
-**Goal:** Elevate the agent from a reactive co-pilot to a proactive, autonomous team member.
-
--   [x] **Autonomous Mode:** Implement a setting for Managers/Admins to enable the agent to run its own daily cycle.
--   [x] **Strategic Suggestion Tool:** Create a `suggest_dunning_plan_change` tool. In autonomous mode, the agent analyzes client history and proposes strategic changes for manager approval.
--   [x] **Proactive Execution Tool:** Create an `execute_dunning_actions` tool. In autonomous mode, the agent identifies and executes all due reminder actions.
--   [x] **UI for Suggestions & Autonomy:** Enhance the chat to render actionable suggestions (with Approve/Decline buttons) and to visually distinguish messages generated by the autonomous agent.
+-   [x] **Workflow Selection:** Allow users to select a workflow from the tracker to view its details in the inspector.
+-   [x] **Add Notes:** Implement the ability to add timestamped notes to a workflow.
+-   [x] **Send Reminders:** Add a button to manually trigger a reminder for a workflow.
+-   [x] **Audit Trail:** Implement a comprehensive audit trail for each workflow and a modal to view it.
+-   [x] **Settings Management:** Create a settings modal to view dunning plans and manage application settings.
 
 ---
 
-## ✅ Phase 6: Advanced Agent Collaboration (Complete)
+### Phase 3: Initial AI Integration & Simulation (COMPLETE)
+**Goal:** Integrate the Gemini API for the first time and build a simulation environment.
 
-**Goal:** Make the agent a true collaborative partner in user workflows.
-
--   [x] **AI-Powered Tone Adjustment:** Implement the ability for a user to provide feedback on an AI-generated draft (e.g., "Make this more formal"), prompting the agent to iteratively redraft the content.
-
----
-
-## ✅ Phase 7: Multimodal Capabilities (Complete)
-
-**Goal:** Expand the agent's abilities to understand and analyze visual data.
-
--   [x] **Document Analysis UI:** Add a file uploader to the `InspectorPanel`.
--   [x] **Multimodal AI Service:** Implement a service function that sends both an image and a text prompt to the Gemini API.
--   [x] **Conversational Q&A:** Allow users to upload a document and ask the agent specific questions about its contents.
+-   [x] **Conversational Analytics:** Implement a chat interface where users can ask the AI questions about the application's data (workflows, performance, etc.).
+-   [x] **Webhook Simulation:** Create a `WebhookListener` component to simulate events from external systems like QuickBooks (new invoice) and Stripe (payment received).
+-   [x] **Client Payment Portal:** Build a simple, client-facing web page to simulate a customer paying an invoice.
 
 ---
 
-## ✅ Phase 8: Predictive AI Capabilities (Complete)
+### Phase 4: Advanced UI & Analytics (COMPLETE)
+**Goal:** Enhance the UI with more sophisticated data visualizations and reporting tools.
 
-**Goal:** Move the agent from being reactive to being predictive.
-
--   [x] **Payment Likelihood Tool:** Create a `predict_payment_likelihood` tool that allows the agent to analyze a client's payment history and assess the risk of a late payment.
--   [x] **Risk Visualization:** Enhance the `WorkflowCard` to display a "Risk Level" badge, providing collectors with an at-a-glance strategic overview.
-
----
-
-## ✅ Phase 9: Advanced Negotiation (Complete)
-
-**Goal:** Empower the agent to handle more complex collection scenarios.
-
--   [x] **Settlement Proposal Tool:** Create a `propose_settlement` tool that allows the agent to draft a settlement offer with a specified discount.
--   [x] **Manager-Authorized Negotiation:** Add UI in the `InspectorPanel` for authorized users (Managers/Admins) to initiate a settlement proposal for overdue workflows.
+-   [x] **Role-Based UI:** Adapt the UI and available actions based on the current user's role (Collector, Manager, Admin).
+-   [x] **Cash Flow Forecast:** Implement a 90-day cash flow forecast chart on the dashboard.
+-   [x] **Analytics View:** Create a dedicated analytics page for managers and admins.
+-   [x] **Invoice Aging Report:** Build a detailed table showing the distribution of overdue invoices.
+-   [x] **Collector Performance Report:** Create a report to track and compare the performance of collectors.
 
 ---
 
-## ✅ Phase 10: Enterprise Automation (Complete)
+### Phase 5: AI-Powered Cash Application (COMPLETE)
+**Goal:** Implement a powerful, enterprise-grade feature to automate a key AR task.
 
-**Goal:** Implement a "killer feature" that addresses a major pain point in enterprise AR.
-
--   [x] **AI-Powered Cash Application:**
-    -   [x] **Multimodal Analysis Tool:** Create a `match_payment_to_invoices` tool that can parse remittance information (from pasted text or an uploaded document).
-    -   [x] **Structured Data Response:** The agent will return a structured JSON object of its findings.
-    -   [x] **Confirmation UI:** Build a confirmation modal for the user to review and approve the agent's proposed payment matches before they are applied.
+-   [x] **AI-Powered Cash Application:** Implement a panel where users can paste remittance info, and the AI will parse it into structured data for payment matching.
 
 ---
 
-## Future Roadmap: Next-Generation Enterprise Features
+### Phase 6: Advanced Enterprise Workflows (COMPLETE)
+**Goal:** Tackle complex, real-world AR challenges.
 
-**Goal:** Build out the remaining features to position FazeAR as a top-tier, market-leading AR automation platform.
+-   [x] **Automated Deductions & Dispute Management:** Automatically identify short payments, create dispute cases, and use the AI to initiate the resolution process.
 
--   [ ] **Automated Deductions & Dispute Management:**
-    -   **Concept:** Automatically identify short payments, create "Dispute Cases," and use the agent to categorize the reason and initiate communication with the client.
-    -   **Value:** Brings structure to a chaotic process, reduces revenue leakage, and speeds up resolution.
+---
 
--   [ ] **Interactive Client Collaboration Portal:**
-    -   **Concept:** Transform the payment portal into a secure, two-way communication hub where clients can interact directly with a secure, client-facing version of the FazeAR agent.
-    -   **Value:** Creates a world-class customer experience and drastically reduces the volume of inbound emails and phone calls.
+### Future Roadmap: Enterprise-Grade Capabilities
+
+The following features would be the next logical steps to evolve FazeAR into a top-tier commercial product.
+
+-   [x] **Upgrade to Full Tool-Based Agent:** Refactor the entire AI interaction model to use a single, powerful agent with a suite of "tools" (Function Calling). This is the foundation for true automation.
+-   [ ] **Interactive Client Collaboration Portal:** Transform the payment portal into a secure, self-service hub where clients can interact directly with a client-facing version of the FazeAR agent to resolve their own queries.

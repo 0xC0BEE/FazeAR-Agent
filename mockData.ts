@@ -1,30 +1,31 @@
 
-import { v4 as uuidv4 } from 'uuid';
-import type { Workflow, User, DunningPlan, AuditEntry } from './types';
 
-export const initialUsers: User[] = [
+import type { User, DunningPlan, Workflow } from './types';
+import { v4 as uuidv4 } from 'uuid';
+
+export const mockUsers: User[] = [
   { id: 'user-1', name: 'Alex Johnson', role: 'Collector' },
-  { id: 'user-2', name: 'Sarah Miller', role: 'Manager' },
-  { id: 'user-3', name: 'David Chen', role: 'Admin' },
+  { id: 'user-2', name: 'Maria Garcia', role: 'Manager' },
+  { id: 'user-3', name: 'Sam Chen', role: 'Admin' },
 ];
 
-export const dunningPlans: DunningPlan[] = [
+export const mockDunningPlans: DunningPlan[] = [
   {
     name: 'Standard',
     steps: [
-      { day: 1, action: 'EMAIL', template: 'Gentle Reminder' },
+      { day: 1, action: 'EMAIL', template: 'Initial Reminder' },
       { day: 7, action: 'EMAIL', template: 'Second Reminder' },
-      { day: 15, action: 'CALL', template: 'Follow-up Call' },
-      { day: 30, action: 'EMAIL', template: 'Final Notice' },
+      { day: 15, action: 'CALL', template: 'First Call Script' },
+      { day: 30, action: 'EMAIL', template: 'Escalation Notice' },
     ],
   },
   {
     name: 'Aggressive',
     steps: [
-      { day: 1, action: 'EMAIL', template: 'Immediate Reminder' },
-      { day: 3, action: 'CALL', template: 'First Follow-up Call' },
-      { day: 7, action: 'EMAIL', template: 'Urgent Payment Request' },
-      { day: 14, action: 'CALL', template: 'Final Warning Call' },
+      { day: 1, action: 'EMAIL', template: 'Urgent Reminder' },
+      { day: 3, action: 'CALL', template: 'Immediate Follow-up' },
+      { day: 7, action: 'EMAIL', template: 'Final Notice' },
+      { day: 14, action: 'CALL', template: 'Escalation Call' },
     ],
   },
 ];
@@ -32,113 +33,95 @@ export const dunningPlans: DunningPlan[] = [
 const today = new Date();
 const formatDate = (date: Date) => date.toISOString().split('T')[0];
 
-const createAuditTrail = (creator: string, activity: string, details: string): AuditEntry[] => [
-  { timestamp: new Date(new Date().getTime() - 86400000).toISOString(), activity: 'Workflow Created', details: `Created by ${creator}` },
-  { timestamp: new Date().toISOString(), activity, details },
-];
-
-export const initialWorkflows: Workflow[] = [
+export const mockWorkflows: Workflow[] = [
   {
-    id: 'wf-1',
-    clientName: 'Quantum Solutions',
+    id: 'c7a4c3f5-118a-4c28-8a8b-59a4c8f2c7f5',
+    clientName: 'Innovate Corp',
     amount: 15234.50,
-    createdDate: formatDate(new Date(today.getTime() - 45 * 24 * 60 * 60 * 1000)), // 45 days ago
-    dueDate: formatDate(new Date(today.getTime() - 15 * 24 * 60 * 60 * 1000)), // 15 days ago
+    dueDate: formatDate(new Date(today.getTime() - 15 * 24 * 60 * 60 * 1000)),
     status: 'Overdue',
     assignee: 'Alex Johnson',
-    dunningPlanName: 'Standard',
-    notes: [
-        { id: uuidv4(), content: "Client mentioned they're waiting for a PO.", author: 'Alex Johnson', timestamp: new Date().toISOString() },
+    dunningPlan: 'Standard',
+    lastContacted: formatDate(new Date(today.getTime() - 5 * 24 * 60 * 60 * 1000)),
+    createdDate: formatDate(new Date(today.getTime() - 45 * 24 * 60 * 60 * 1000)),
+    auditTrail: [
+      { timestamp: new Date(today.getTime() - 5 * 24 * 60 * 60 * 1000).toISOString(), activity: 'Email Sent', details: 'Template: Second Reminder' },
+      { timestamp: new Date(today.getTime() - 14 * 24 * 60 * 60 * 1000).toISOString(), activity: 'Email Sent', details: 'Template: Initial Reminder' },
+      { timestamp: new Date(today.getTime() - 45 * 24 * 60 * 60 * 1000).toISOString(), activity: 'Workflow Created', details: 'Invoice #INV-001 created.' }
     ],
-    tasks: [
-        { id: uuidv4(), content: "Follow up via phone call.", assignee: 'Alex Johnson', isCompleted: false }
-    ],
-    communicationHistory: [
-        { stepName: "Gentle Reminder Email Sent", timestamp: new Date(today.getTime() - 14 * 24 * 60 * 60 * 1000).toISOString() },
-        { stepName: "Second Reminder Email Sent", timestamp: new Date(today.getTime() - 8 * 24 * 60 * 60 * 1000).toISOString() }
-    ],
-    auditTrail: createAuditTrail('Sarah Miller', 'Status Changed to Overdue', 'Payment not received by due date.'),
-    paymentUrl: `${window.location.origin}/pay?workflowId=wf-1`,
+    externalId: 'qb_inv_123',
   },
   {
-    id: 'wf-2',
+    id: 'd8b5e4a3-229c-5d39-9b9c-60b5d9e3d8e6',
     clientName: 'Synergy Corp',
-    amount: 8500.00,
-    createdDate: formatDate(new Date(today.getTime() - 20 * 24 * 60 * 60 * 1000)),
-    dueDate: formatDate(new Date(today.getTime() + 10 * 24 * 60 * 60 * 1000)), // 10 days from now
-    status: 'In Progress',
-    assignee: 'Alex Johnson',
-    dunningPlanName: 'Standard',
-    notes: [],
-    tasks: [],
-    communicationHistory: [],
-    auditTrail: createAuditTrail('David Chen', 'Initial Review', 'Workflow created and assigned.'),
-    paymentUrl: `${window.location.origin}/pay?workflowId=wf-2`,
+    amount: 7500.00,
+    dueDate: formatDate(new Date(today.getTime() - 5 * 24 * 60 * 60 * 1000)),
+    status: 'Overdue',
+    assignee: 'Maria Garcia',
+    dunningPlan: 'Standard',
+    lastContacted: null,
+    createdDate: formatDate(new Date(today.getTime() - 35 * 24 * 60 * 60 * 1000)),
+    auditTrail: [{ timestamp: new Date(today.getTime() - 35 * 24 * 60 * 60 * 1000).toISOString(), activity: 'Workflow Created', details: 'Invoice #INV-004 created.' }],
+    externalId: 'qb_inv_128',
+    disputes: [
+        { id: uuidv4(), amount: 1000, reason: 'Damaged Goods Claim', status: 'Open', dateCreated: new Date(today.getTime() - 2 * 24 * 60 * 60 * 1000).toISOString() }
+    ]
   },
   {
-    id: 'wf-3',
-    clientName: 'Innovate Inc.',
-    amount: 25000.00,
-    createdDate: formatDate(new Date(today.getTime() - 5 * 24 * 60 * 60 * 1000)),
-    dueDate: formatDate(new Date(today.getTime() + 30 * 24 * 60 * 60 * 1000)), // 30 days from now
+    id: uuidv4(),
+    clientName: 'Quantum Solutions',
+    amount: 8500.00,
+    dueDate: formatDate(new Date(today.getTime() + 10 * 24 * 60 * 60 * 1000)),
     status: 'In Progress',
-    assignee: 'Sarah Miller',
-    dunningPlanName: 'Standard',
-    notes: [{id: uuidv4(), content: 'High-value client, monitor closely.', author: 'David Chen', timestamp: new Date().toISOString()}],
-    tasks: [],
-    communicationHistory: [],
-    auditTrail: createAuditTrail('David Chen', 'Initial Review', 'Workflow created and assigned.'),
-    paymentUrl: `${window.location.origin}/pay?workflowId=wf-3`,
+    assignee: 'Alex Johnson',
+    dunningPlan: 'Standard',
+    lastContacted: null,
+    createdDate: formatDate(new Date(today.getTime() - 20 * 24 * 60 * 60 * 1000)),
+    auditTrail: [{ timestamp: new Date(today.getTime() - 20 * 24 * 60 * 60 * 1000).toISOString(), activity: 'Workflow Created', details: 'Invoice #INV-002 created.' }],
+    externalId: 'qb_inv_124',
   },
-   {
-    id: 'wf-4',
+    {
+    id: 'a1b2c3d4-e5f6-7890-1234-567890abcdef',
     clientName: 'Apex Industries',
-    amount: 4500.75,
-    createdDate: formatDate(new Date(today.getTime() - 35 * 24 * 60 * 60 * 1000)),
-    dueDate: formatDate(new Date(today.getTime() - 5 * 24 * 60 * 60 * 1000)), // 5 days ago
+    amount: 22000.75,
+    dueDate: formatDate(new Date(today.getTime() - 40 * 24 * 60 * 60 * 1000)),
+    status: 'Overdue',
+    assignee: 'Maria Garcia',
+    dunningPlan: 'Aggressive',
+    lastContacted: formatDate(new Date(today.getTime() - 10 * 24 * 60 * 60 * 1000)),
+    createdDate: formatDate(new Date(today.getTime() - 70 * 24 * 60 * 60 * 1000)),
+    auditTrail: [
+        { timestamp: new Date(today.getTime() - 10 * 24 * 60 * 60 * 1000).toISOString(), activity: 'Call Made', details: 'Spoke to accounts payable.' },
+        { timestamp: new Date(today.getTime() - 39 * 24 * 60 * 60 * 1000).toISOString(), activity: 'Email Sent', details: 'Template: Urgent Reminder' },
+        { timestamp: new Date(today.getTime() - 70 * 24 * 60 * 60 * 1000).toISOString(), activity: 'Workflow Created', details: 'Invoice #INV-003 created.' }
+    ],
+    externalId: 'qb_inv_125',
+  },
+  {
+    id: uuidv4(),
+    clientName: 'Zenith Tech',
+    amount: 5000.00,
+    dueDate: formatDate(new Date(today.getTime() - 95 * 24 * 60 * 60 * 1000)),
     status: 'Overdue',
     assignee: 'Alex Johnson',
-    dunningPlanName: 'Aggressive',
-    notes: [],
-    tasks: [
-        { id: uuidv4(), content: "Send urgent payment request.", assignee: 'Alex Johnson', isCompleted: true },
-        { id: uuidv4(), content: "Prepare for final warning call.", assignee: 'Alex Johnson', isCompleted: false }
-    ],
-    communicationHistory: [
-        { stepName: "Immediate Reminder Email Sent", timestamp: new Date(today.getTime() - 4 * 24 * 60 * 60 * 1000).toISOString() },
-    ],
-    auditTrail: createAuditTrail('Sarah Miller', 'Status Changed to Overdue', 'Payment not received by due date.'),
-    paymentUrl: `${window.location.origin}/pay?workflowId=wf-4`,
+    dunningPlan: 'Standard',
+    lastContacted: formatDate(new Date(today.getTime() - 60 * 24 * 60 * 60 * 1000)),
+    createdDate: formatDate(new Date(today.getTime() - 125 * 24 * 60 * 60 * 1000)),
+    auditTrail: [],
+    externalId: 'qb_inv_126',
   },
   {
-    id: 'wf-5',
-    clientName: 'Horizon Dynamics',
-    amount: 11200.00,
-    createdDate: formatDate(new Date(today.getTime() - 75 * 24 * 60 * 60 * 1000)),
-    dueDate: formatDate(new Date(today.getTime() - 45 * 24 * 60 * 60 * 1000)), // 45 days ago
-    paymentDate: formatDate(new Date(today.getTime() - 10 * 24 * 60 * 60 * 1000)),
+    id: uuidv4(),
+    clientName: 'Nova Digital',
+    amount: 1250.25,
+    dueDate: formatDate(new Date(today.getTime() - 60 * 24 * 60 * 60 * 1000)),
     status: 'Completed',
-    assignee: 'Sarah Miller',
-    dunningPlanName: 'Standard',
-    notes: [{id: uuidv4(), content: 'Payment received after final notice.', author: 'Sarah Miller', timestamp: new Date().toISOString()}],
-    tasks: [],
-    communicationHistory: [],
-    auditTrail: createAuditTrail('Sarah Miller', 'Payment Received', 'Payment processed via Stripe.'),
-    paymentUrl: `${window.location.origin}/pay?workflowId=wf-5`,
-  },
-  {
-    id: 'wf-6',
-    clientName: 'Pinnacle Group',
-    amount: 7800.00,
-    createdDate: formatDate(new Date(today.getTime() - 10 * 24 * 60 * 60 * 1000)),
-    dueDate: formatDate(new Date(today.getTime() + 5 * 24 * 60 * 60 * 1000)), // 5 days from now
-    status: 'In Progress',
-    assignee: 'Sarah Miller',
-    dunningPlanName: 'Standard',
-    notes: [],
-    tasks: [],
-    communicationHistory: [],
-    auditTrail: createAuditTrail('David Chen', 'Initial Review', 'Workflow created and assigned.'),
-    paymentUrl: `${window.location.origin}/pay?workflowId=wf-6`,
+    assignee: 'Maria Garcia',
+    dunningPlan: 'Standard',
+    lastContacted: formatDate(new Date(today.getTime() - 65 * 24 * 60 * 60 * 1000)),
+    paymentDate: formatDate(new Date(today.getTime() - 58 * 24 * 60 * 60 * 1000)),
+    createdDate: formatDate(new Date(today.getTime() - 90 * 24 * 60 * 60 * 1000)),
+    auditTrail: [],
+    externalId: 'qb_inv_127',
   },
 ];
