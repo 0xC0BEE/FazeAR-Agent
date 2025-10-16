@@ -1,7 +1,7 @@
 
 import React from 'react';
-import type { Workflow, User } from '../types';
-import { UserIcon } from './icons/UserIcon';
+import type { Workflow, User } from '../types.ts';
+import { UserIcon } from './icons/UserIcon.tsx';
 
 interface CollectorPerformanceProps {
     workflows: Workflow[];

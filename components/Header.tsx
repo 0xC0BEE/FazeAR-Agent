@@ -1,9 +1,9 @@
 // Fix: Implemented the Header component.
 import React from 'react';
-import { SettingsIcon } from './icons/SettingsIcon';
-import { UserIcon } from './icons/UserIcon';
-import { ChevronDownIcon } from './icons/ChevronDownIcon';
-import type { User } from '../types';
+import { SettingsIcon } from './icons/SettingsIcon.tsx';
+import { UserIcon } from './icons/UserIcon.tsx';
+import { ChevronDownIcon } from './icons/ChevronDownIcon.tsx';
+import type { User } from '../types.ts';
 
 interface HeaderProps {
   onOpenSettings: () => void;

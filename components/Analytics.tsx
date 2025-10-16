@@ -1,8 +1,8 @@
 import React from 'react';
-import type { Workflow, User } from '../types';
-import { AgingReport } from './AgingReport';
-import { CollectorPerformance } from './CollectorPerformance';
-import { AIInsights } from './AIInsights';
+import type { Workflow, User } from '../types.ts';
+import { AgingReport } from './AgingReport.tsx';
+import { CollectorPerformance } from './CollectorPerformance.tsx';
+import { AIInsights } from './AIInsights.tsx';
 
 interface AnalyticsProps {
   workflows: Workflow[];

@@ -1,11 +1,11 @@
 
 import React, { useState } from 'react';
-import type { Workflow } from '../types';
-import { UploadIcon } from './icons/UploadIcon';
-import { SpinnerIcon } from './icons/SpinnerIcon';
-import { CheckIcon } from './icons/CheckIcon';
-import { analyzeCashApplication } from '../services/geminiService';
-import { CashAppConfirmationModal } from './CashAppConfirmationModal';
+import type { Workflow } from '../types.ts';
+import { UploadIcon } from './icons/UploadIcon.tsx';
+import { SpinnerIcon } from './icons/SpinnerIcon.tsx';
+import { CheckIcon } from './icons/CheckIcon.tsx';
+import { analyzeCashApplication } from '../services/geminiService.ts';
+import { CashAppConfirmationModal } from './CashAppConfirmationModal.tsx';
 
 interface CashAppPanelProps {
   workflows: Workflow[];

@@ -1,13 +1,13 @@
 
 import React, { useState, useEffect } from 'react';
 import { v4 as uuidv4 } from 'uuid';
-import { Header } from './components/Header';
-import { Dashboard } from './components/Dashboard';
-import { Analytics } from './components/Analytics';
-import { SettingsModal } from './components/SettingsModal';
-import { runChat } from './services/geminiService';
-import type { User, Workflow, DunningPlan, ChatMessage } from './types';
-import { USERS, WORKFLOWS, DUNNING_PLANS } from './mockData';
+import { Header } from './components/Header.tsx';
+import { Dashboard } from './components/Dashboard.tsx';
+import { Analytics } from './components/Analytics.tsx';
+import { SettingsModal } from './components/SettingsModal.tsx';
+import { runChat } from './services/geminiService.ts';
+import type { User, Workflow, DunningPlan, ChatMessage } from './types.ts';
+import { USERS, WORKFLOWS, DUNNING_PLANS } from './mockData.ts';
 
 function App() {
   const [users] = useState<User[]>(USERS);

@@ -1,7 +1,7 @@
 
 import React from 'react';
-import { XIcon } from './icons/XIcon';
-import { CheckCircleIcon } from './icons/CheckCircleIcon';
+import { XIcon } from './icons/XIcon.tsx';
+import { CheckCircleIcon } from './icons/CheckCircleIcon.tsx';
 
 interface Match {
   clientName: string;

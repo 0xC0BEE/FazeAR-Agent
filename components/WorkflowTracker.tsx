@@ -1,8 +1,8 @@
 import React, { useState, useRef, useEffect } from 'react';
-import type { Workflow, User } from '../types';
-import { WorkflowCard } from './WorkflowCard';
-import { SearchIcon } from './icons/SearchIcon';
-import { SpinnerIcon } from './icons/SpinnerIcon';
+import type { Workflow, User } from '../types.ts';
+import { WorkflowCard } from './WorkflowCard.tsx';
+import { SearchIcon } from './icons/SearchIcon.tsx';
+import { SpinnerIcon } from './icons/SpinnerIcon.tsx';
 
 interface WorkflowTrackerProps {
   workflows: Workflow[];

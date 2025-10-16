@@ -1,6 +1,6 @@
 import React from 'react';
-import type { Workflow } from '../types';
-import { WebhookIcon } from './icons/WebhookIcon';
+import type { Workflow } from '../types.ts';
+import { WebhookIcon } from './icons/WebhookIcon.tsx';
 import { v4 as uuidv4 } from 'uuid';
 
 interface WebhookListenerProps {

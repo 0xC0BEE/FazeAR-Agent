@@ -1,10 +1,10 @@
 
 import React from 'react';
-import type { Workflow } from '../types';
-import { CalendarIcon } from './icons/CalendarIcon';
-import { UserIcon } from './icons/UserIcon';
-import { DollarIcon } from './icons/DollarIcon';
-import { ExclamationIcon } from './icons/ExclamationIcon';
+import type { Workflow } from '../types.ts';
+import { CalendarIcon } from './icons/CalendarIcon.tsx';
+import { UserIcon } from './icons/UserIcon.tsx';
+import { DollarIcon } from './icons/DollarIcon.tsx';
+import { ExclamationIcon } from './icons/ExclamationIcon.tsx';
 
 interface WorkflowCardProps {
   workflow: Workflow;

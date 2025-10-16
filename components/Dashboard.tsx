@@ -1,11 +1,11 @@
 import React from 'react';
-import type { Workflow, User, ChatMessage } from '../types';
-import { WorkflowTracker } from './WorkflowTracker';
-import { InspectorPanel } from './InspectorPanel';
-import { ChatInterface } from './ChatInterface';
-import { CashFlowChart } from './CashFlowChart';
-import { WebhookListener } from './WebhookListener';
-import { CashAppPanel } from './CashAppPanel';
+import type { Workflow, User, ChatMessage } from '../types.ts';
+import { WorkflowTracker } from './WorkflowTracker.tsx';
+import { InspectorPanel } from './InspectorPanel.tsx';
+import { ChatInterface } from './ChatInterface.tsx';
+import { CashFlowChart } from './CashFlowChart.tsx';
+import { WebhookListener } from './WebhookListener.tsx';
+import { CashAppPanel } from './CashAppPanel.tsx';
 
 interface DashboardProps {
   workflows: Workflow[];

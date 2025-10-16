@@ -1,6 +1,6 @@
 
 import { GoogleGenAI, Type, GenerateContentResponse, Content } from "@google/genai";
-import type { ChatMessage, Workflow, User } from '../types';
+import type { ChatMessage, Workflow, User } from '../types.ts';
 
 // Per guidelines, API key must be from process.env.API_KEY
 const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });

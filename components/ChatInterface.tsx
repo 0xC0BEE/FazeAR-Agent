@@ -1,9 +1,9 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { BotIcon } from './icons/BotIcon';
-import { UserIcon } from './icons/UserIcon';
-import { SparklesIcon } from './icons/SparklesIcon';
-import { SpinnerIcon } from './icons/SpinnerIcon';
-import type { Workflow, User, ChatMessage } from '../types';
+import { BotIcon } from './icons/BotIcon.tsx';
+import { UserIcon } from './icons/UserIcon.tsx';
+import { SparklesIcon } from './icons/SparklesIcon.tsx';
+import { SpinnerIcon } from './icons/SpinnerIcon.tsx';
+import type { Workflow, User, ChatMessage } from '../types.ts';
 
 interface ChatInterfaceProps {
     currentUser: User;

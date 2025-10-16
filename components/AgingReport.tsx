@@ -1,5 +1,5 @@
 import React from 'react';
-import type { Workflow } from '../types';
+import type { Workflow } from '../types.ts';
 
 interface AgingReportProps {
     workflows: Workflow[];

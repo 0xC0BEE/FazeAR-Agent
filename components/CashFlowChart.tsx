@@ -1,6 +1,6 @@
 import React from 'react';
-import type { Workflow } from '../types';
-import { XIcon } from './icons/XIcon';
+import type { Workflow } from '../types.ts';
+import { XIcon } from './icons/XIcon.tsx';
 
 interface CashFlowChartProps {
   workflows: Workflow[];

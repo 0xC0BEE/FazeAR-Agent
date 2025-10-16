@@ -1,12 +1,12 @@
 
 import React, { useState } from 'react';
-import type { Workflow } from '../types';
-import { ClipboardListIcon } from './icons/ClipboardListIcon';
-import { DollarIcon } from './icons/DollarIcon';
-import { CalendarIcon } from './icons/CalendarIcon';
-import { UserIcon } from './icons/UserIcon';
-import { NoteIcon } from './icons/NoteIcon';
-import { SpinnerIcon } from './icons/SpinnerIcon';
+import type { Workflow } from '../types.ts';
+import { ClipboardListIcon } from './icons/ClipboardListIcon.tsx';
+import { DollarIcon } from './icons/DollarIcon.tsx';
+import { CalendarIcon } from './icons/CalendarIcon.tsx';
+import { UserIcon } from './icons/UserIcon.tsx';
+import { NoteIcon } from './icons/NoteIcon.tsx';
+import { SpinnerIcon } from './icons/SpinnerIcon.tsx';
 
 interface InspectorPanelProps {
   workflow: Workflow | null;

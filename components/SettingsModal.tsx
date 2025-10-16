@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
-import type { DunningPlan, User } from '../types';
-import { XIcon } from './icons/XIcon';
+import type { DunningPlan, User } from '../types.ts';
+import { XIcon } from './icons/XIcon.tsx';
 
 interface SettingsModalProps {
   isOpen: boolean;
