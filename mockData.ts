@@ -1,120 +1,127 @@
 
-import { User, DunningPlan, Workflow } from './types';
+
+import type { User, DunningPlan, Workflow } from './types';
 import { v4 as uuidv4 } from 'uuid';
 
-export const USERS: User[] = [
-  { id: 'user-1', name: 'Alex Johnson', role: 'Admin' },
+export const mockUsers: User[] = [
+  { id: 'user-1', name: 'Alex Johnson', role: 'Collector' },
   { id: 'user-2', name: 'Maria Garcia', role: 'Manager' },
-  { id: 'user-3', name: 'David Chen', role: 'Collector' },
-  { id: 'user-4', name: 'Emily White', role: 'Collector' },
+  { id: 'user-3', name: 'Sam Chen', role: 'Admin' },
 ];
 
-export const DUNNING_PLANS: DunningPlan[] = [
+export const mockDunningPlans: DunningPlan[] = [
   {
     name: 'Standard',
     steps: [
-      { day: 3, action: 'EMAIL', template: 'Gentle Reminder' },
-      { day: 15, action: 'EMAIL', template: 'Second Notice' },
-      { day: 30, action: 'CALL', template: 'First Call Script' },
-      { day: 45, action: 'EMAIL', template: 'Final Notice' },
+      { day: 1, action: 'EMAIL', template: 'Initial Reminder' },
+      { day: 7, action: 'EMAIL', template: 'Second Reminder' },
+      { day: 15, action: 'CALL', template: 'First Call Script' },
+      { day: 30, action: 'EMAIL', template: 'Escalation Notice' },
     ],
   },
   {
     name: 'Aggressive',
     steps: [
-      { day: 1, action: 'EMAIL', template: 'Payment Due' },
-      { day: 7, action: 'CALL', template: 'First Call Script' },
-      { day: 14, action: 'EMAIL', template: 'Second Notice (Urgent)' },
-      { day: 21, action: 'CALL', template: 'Second Call Script' },
-      { day: 30, action: 'EMAIL', template: 'Final Notice (Action Required)' },
+      { day: 1, action: 'EMAIL', template: 'Urgent Reminder' },
+      { day: 3, action: 'CALL', template: 'Immediate Follow-up' },
+      { day: 7, action: 'EMAIL', template: 'Final Notice' },
+      { day: 14, action: 'CALL', template: 'Escalation Call' },
     ],
   },
 ];
 
-const generateRandomDate = (start: Date, end: Date): string => {
-  return new Date(start.getTime() + Math.random() * (end.getTime() - start.getTime())).toISOString().split('T')[0];
-};
+const today = new Date();
+const formatDate = (date: Date) => date.toISOString().split('T')[0];
 
-export const WORKFLOWS: Workflow[] = [
-  // Overdue
+export const mockWorkflows: Workflow[] = [
   {
-    id: `wf-a1b7c7f5`,
-    externalId: 'qb_inv_88a1b7',
+    id: 'c7a4c3f5-118a-4c28-8a8b-59a4c8f2c7f5',
     clientName: 'Innovate Corp',
-    amount: 25000,
-    dueDate: '2024-06-15',
-    createdDate: '2024-05-16',
-    status: 'Overdue',
-    assignee: 'David Chen',
-    dunningPlan: 'Standard',
-    currentStep: 2,
-    auditTrail: [
-        { timestamp: '2024-06-18T10:00:00Z', activity: 'Email Sent', details: 'Template: Second Notice' },
-        { timestamp: '2024-05-19T09:00:00Z', activity: 'Email Sent', details: 'Template: Gentle Reminder' }
-    ],
-  },
-  {
-    id: `wf-d8e9f0a1`,
-    externalId: 'qb_inv_92c3d8',
-    clientName: 'Quantum Solutions',
     amount: 15234.50,
-    dueDate: '2024-05-20',
-    createdDate: '2024-04-20',
+    dueDate: formatDate(new Date(today.getTime() - 15 * 24 * 60 * 60 * 1000)),
     status: 'Overdue',
-    assignee: 'Emily White',
-    dunningPlan: 'Aggressive',
-    currentStep: 4,
-    auditTrail: [ { timestamp: '2024-05-28T14:20:10Z', activity: 'Call Logged', details: 'Left voicemail with contact.' } ],
-  },
-  // In Progress
-  {
-    id: `wf-b2c3d4e5`,
-    externalId: 'qb_inv_75e9f0',
-    clientName: 'Synergy Partners',
-    amount: 7800,
-    dueDate: '2024-08-01',
-    createdDate: '2024-07-02',
-    status: 'In Progress',
-    assignee: 'David Chen',
+    assignee: 'Alex Johnson',
     dunningPlan: 'Standard',
-    currentStep: 0,
-    auditTrail: [],
+    lastContacted: formatDate(new Date(today.getTime() - 5 * 24 * 60 * 60 * 1000)),
+    createdDate: formatDate(new Date(today.getTime() - 45 * 24 * 60 * 60 * 1000)),
+    auditTrail: [
+      { timestamp: new Date(today.getTime() - 5 * 24 * 60 * 60 * 1000).toISOString(), activity: 'Email Sent', details: 'Template: Second Reminder' },
+      { timestamp: new Date(today.getTime() - 14 * 24 * 60 * 60 * 1000).toISOString(), activity: 'Email Sent', details: 'Template: Initial Reminder' },
+      { timestamp: new Date(today.getTime() - 45 * 24 * 60 * 60 * 1000).toISOString(), activity: 'Workflow Created', details: 'Invoice #INV-001 created.' }
+    ],
+    externalId: 'qb_inv_123',
   },
   {
-    id: `wf-f6g7h8i9`,
-    externalId: 'qb_inv_b4a0e1',
+    id: 'd8b5e4a3-229c-5d39-9b9c-60b5d9e3d8e6',
+    clientName: 'Synergy Corp',
+    amount: 7500.00,
+    dueDate: formatDate(new Date(today.getTime() - 5 * 24 * 60 * 60 * 1000)),
+    status: 'Overdue',
+    assignee: 'Maria Garcia',
+    dunningPlan: 'Standard',
+    lastContacted: null,
+    createdDate: formatDate(new Date(today.getTime() - 35 * 24 * 60 * 60 * 1000)),
+    auditTrail: [{ timestamp: new Date(today.getTime() - 35 * 24 * 60 * 60 * 1000).toISOString(), activity: 'Workflow Created', details: 'Invoice #INV-004 created.' }],
+    externalId: 'qb_inv_128',
+    disputes: [
+        { id: uuidv4(), amount: 1000, reason: 'Damaged Goods Claim', status: 'Open', dateCreated: new Date(today.getTime() - 2 * 24 * 60 * 60 * 1000).toISOString() }
+    ]
+  },
+  {
+    id: uuidv4(),
+    clientName: 'Quantum Solutions',
+    amount: 8500.00,
+    dueDate: formatDate(new Date(today.getTime() + 10 * 24 * 60 * 60 * 1000)),
+    status: 'In Progress',
+    assignee: 'Alex Johnson',
+    dunningPlan: 'Standard',
+    lastContacted: null,
+    createdDate: formatDate(new Date(today.getTime() - 20 * 24 * 60 * 60 * 1000)),
+    auditTrail: [{ timestamp: new Date(today.getTime() - 20 * 24 * 60 * 60 * 1000).toISOString(), activity: 'Workflow Created', details: 'Invoice #INV-002 created.' }],
+    externalId: 'qb_inv_124',
+  },
+    {
+    id: 'a1b2c3d4-e5f6-7890-1234-567890abcdef',
     clientName: 'Apex Industries',
-    amount: 42500,
-    dueDate: '2024-07-25',
-    createdDate: '2024-06-25',
-    status: 'In Progress',
-    assignee: 'Emily White',
-    dunningPlan: 'Standard',
-    currentStep: 0,
-    auditTrail: [],
+    amount: 22000.75,
+    dueDate: formatDate(new Date(today.getTime() - 40 * 24 * 60 * 60 * 1000)),
+    status: 'Overdue',
+    assignee: 'Maria Garcia',
+    dunningPlan: 'Aggressive',
+    lastContacted: formatDate(new Date(today.getTime() - 10 * 24 * 60 * 60 * 1000)),
+    createdDate: formatDate(new Date(today.getTime() - 70 * 24 * 60 * 60 * 1000)),
+    auditTrail: [
+        { timestamp: new Date(today.getTime() - 10 * 24 * 60 * 60 * 1000).toISOString(), activity: 'Call Made', details: 'Spoke to accounts payable.' },
+        { timestamp: new Date(today.getTime() - 39 * 24 * 60 * 60 * 1000).toISOString(), activity: 'Email Sent', details: 'Template: Urgent Reminder' },
+        { timestamp: new Date(today.getTime() - 70 * 24 * 60 * 60 * 1000).toISOString(), activity: 'Workflow Created', details: 'Invoice #INV-003 created.' }
+    ],
+    externalId: 'qb_inv_125',
   },
-  // More data
-  ...Array.from({ length: 20 }, (_, i) => {
-    const clientNames = ['Nexus Tech', 'Visionary Inc.', 'Pinnacle Group', 'Momentum LLC', 'Starlight Enterprises'];
-    const assignees = ['David Chen', 'Emily White'];
-    const created = new Date();
-    created.setDate(created.getDate() - i * 5 - 10);
-    const due = new Date(created);
-    due.setDate(due.getDate() + 30);
-    const today = new Date();
-    const isOverdue = due < today;
-    return {
-        id: `wf-${uuidv4().slice(0, 8)}`,
-        externalId: `qb_inv_${uuidv4().slice(0, 6)}`,
-        clientName: clientNames[i % clientNames.length],
-        amount: Math.floor(Math.random() * (50000 - 500 + 1)) + 500,
-        dueDate: due.toISOString().split('T')[0],
-        createdDate: created.toISOString().split('T')[0],
-        status: isOverdue ? 'Overdue' : 'In Progress',
-        assignee: assignees[i % assignees.length],
-        dunningPlan: 'Standard',
-        currentStep: isOverdue ? 1 : 0,
-        auditTrail: isOverdue ? [{ timestamp: new Date(new Date(due).setDate(due.getDate() + 3)).toISOString(), activity: 'Email Sent', details: 'Template: Gentle Reminder' }] : [],
-    } as Workflow
-  })
+  {
+    id: uuidv4(),
+    clientName: 'Zenith Tech',
+    amount: 5000.00,
+    dueDate: formatDate(new Date(today.getTime() - 95 * 24 * 60 * 60 * 1000)),
+    status: 'Overdue',
+    assignee: 'Alex Johnson',
+    dunningPlan: 'Standard',
+    lastContacted: formatDate(new Date(today.getTime() - 60 * 24 * 60 * 60 * 1000)),
+    createdDate: formatDate(new Date(today.getTime() - 125 * 24 * 60 * 60 * 1000)),
+    auditTrail: [],
+    externalId: 'qb_inv_126',
+  },
+  {
+    id: uuidv4(),
+    clientName: 'Nova Digital',
+    amount: 1250.25,
+    dueDate: formatDate(new Date(today.getTime() - 60 * 24 * 60 * 60 * 1000)),
+    status: 'Completed',
+    assignee: 'Maria Garcia',
+    dunningPlan: 'Standard',
+    lastContacted: formatDate(new Date(today.getTime() - 65 * 24 * 60 * 60 * 1000)),
+    paymentDate: formatDate(new Date(today.getTime() - 58 * 24 * 60 * 60 * 1000)),
+    createdDate: formatDate(new Date(today.getTime() - 90 * 24 * 60 * 60 * 1000)),
+    auditTrail: [],
+    externalId: 'qb_inv_127',
+  },
 ];
