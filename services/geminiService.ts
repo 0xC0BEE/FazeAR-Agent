@@ -1,13 +1,26 @@
-
 import { GoogleGenAI, Type, GenerateContentResponse, Content } from "@google/genai";
+import { GEMINI_API_KEY } from '../apiKey.ts';
 import type { ChatMessage, Workflow, User } from '../types.ts';
 
-// Per guidelines, API key must be from process.env.API_KEY
-const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+let ai: GoogleGenAI | null = null;
+
+// Singleton client getter to lazy-initialize the AI client
+const getAiClient = (): GoogleGenAI => {
+    if (!ai) {
+        if (!GEMINI_API_KEY || GEMINI_API_KEY === "YOUR_API_KEY_HERE") {
+          // Remind the user to add their key if they haven't.
+          // This now throws an error when an API call is made, not on app load.
+          throw new Error("Please replace 'YOUR_API_KEY_HERE' with your actual Gemini API key in the apiKey.ts file.");
+        }
+        ai = new GoogleGenAI({ apiKey: GEMINI_API_KEY });
+    }
+    return ai;
+}
 
 // This is a placeholder for a more complex chat implementation.
 // For the current app, the main usage is analyzeCashApplication.
 export const runChat = async (messages: ChatMessage[], workflows: Workflow[], users: User[]): Promise<GenerateContentResponse> => {
+  const client = getAiClient();
   const lastUserMessage = messages[messages.length - 1].content || "";
 
   // A very basic router for demonstration. A full implementation would use tools.
@@ -17,7 +30,7 @@ export const runChat = async (messages: ChatMessage[], workflows: Workflow[], us
      return { text } as GenerateContentResponse;
   }
 
-  const response = await ai.models.generateContent({
+  const response = await client.models.generateContent({
     model: 'gemini-2.5-flash',
     // Fix: Correctly map ChatMessage to Gemini's Content type, filtering out tool-related roles not directly sent.
     contents: messages
@@ -34,9 +47,10 @@ export const runChat = async (messages: ChatMessage[], workflows: Workflow[], us
  * @returns A GenerateContentResponse containing the parsed data in its text property.
  */
 export const analyzeCashApplication = async (remittanceText: string): Promise<GenerateContentResponse> => {
+    const client = getAiClient();
     const prompt = `Analyze the following remittance text and extract the payment information into a structured JSON array. For each payment, provide the client's name, the invoice ID referenced, and the amount paid. Text: "${remittanceText}"`;
 
-    const response = await ai.models.generateContent({
+    const response = await client.models.generateContent({
         model: "gemini-2.5-flash",
         contents: prompt,
         config: {
