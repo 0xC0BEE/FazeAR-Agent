@@ -40,6 +40,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
 }) => {
   return (
     <div className="grid grid-cols-1 xl:grid-cols-12 gap-6 h-full min-h-0">
+      {/* Left Column */}
       <div className="xl:col-span-3 flex flex-col h-full min-h-0">
         <WorkflowTracker
           workflows={workflows}
@@ -48,18 +49,26 @@ export const Dashboard: React.FC<DashboardProps> = ({
           selectedWorkflowId={selectedWorkflow?.id || null}
         />
       </div>
-      <div className="xl:col-span-6 flex flex-col gap-6 min-h-0">
-        <CashFlowChart 
-            workflows={workflows}
-            scenarioWorkflows={scenarioWorkflows}
-            onClearScenario={onClearScenario}
-        />
-        <InspectorPanel
-          workflow={selectedWorkflow}
-          onAddNote={onAddNote}
-        />
+
+      {/* Middle Column */}
+      <div className="xl:col-span-5 flex flex-col gap-6 h-full min-h-0">
+        <div className="flex-shrink-0">
+           <CashFlowChart 
+              workflows={workflows}
+              scenarioWorkflows={scenarioWorkflows}
+              onClearScenario={onClearScenario}
+          />
+        </div>
+        <div className="flex-1 min-h-0">
+          <InspectorPanel
+            workflow={selectedWorkflow}
+            onAddNote={onAddNote}
+          />
+        </div>
       </div>
-      <div className="xl:col-span-3 flex flex-col gap-6 min-h-0">
+      
+      {/* Right Column */}
+      <div className="xl:col-span-4 flex flex-col gap-6 h-full min-h-0">
         <div className="flex-grow min-h-0">
           <ChatInterface
               currentUser={currentUser}
