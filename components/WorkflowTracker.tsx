@@ -1,9 +1,10 @@
 import React, { useState, useRef, useEffect } from 'react';
-// Fix: Corrected import path for types.ts to be explicit.
 import type { Workflow, User } from '../types.ts';
 import { WorkflowCard } from './WorkflowCard.tsx';
 import { SearchIcon } from './icons/SearchIcon.tsx';
 import { SpinnerIcon } from './icons/SpinnerIcon.tsx';
+import { Input } from './ui/Input.tsx';
+import { Button } from './ui/Button.tsx';
 
 interface WorkflowTrackerProps {
   workflows: Workflow[];
@@ -41,7 +42,6 @@ export const WorkflowTracker: React.FC<WorkflowTrackerProps> = ({ workflows, cur
       return new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime()
   });
 
-  // Reset visible count and scroll to top when filters change
   useEffect(() => {
     setVisibleCount(INITIAL_LOAD_COUNT);
     if (scrollContainerRef.current) {
@@ -49,7 +49,6 @@ export const WorkflowTracker: React.FC<WorkflowTrackerProps> = ({ workflows, cur
     }
   }, [activeTab, searchTerm, statusFilter]);
 
-  // Infinite scroll observer
   useEffect(() => {
     const scrollContainer = scrollContainerRef.current;
     if (!scrollContainer) return;
@@ -62,7 +61,7 @@ export const WorkflowTracker: React.FC<WorkflowTrackerProps> = ({ workflows, cur
       },
       { 
         root: scrollContainer,
-        rootMargin: '0px 0px 200px 0px', // Trigger when loader is 200px from bottom
+        rootMargin: '0px 0px 200px 0px',
         threshold: 0.01 
       }
     );
@@ -87,50 +86,52 @@ export const WorkflowTracker: React.FC<WorkflowTrackerProps> = ({ workflows, cur
   }
 
   return (
-    <div className="flex flex-col h-full bg-slate-800/50 rounded-lg shadow-lg border border-slate-700">
-      <div className="p-4 border-b border-slate-700 flex-shrink-0">
+    <div className="flex flex-col h-full bg-secondary/40 rounded-lg shadow-lg border">
+      <div className="p-4 border-b flex-shrink-0">
         <div>
-            <h2 className="text-lg font-semibold text-white">Workflow Tracker</h2>
-            <p className="text-sm text-slate-400">Manage outstanding invoices.</p>
+            <h2 className="text-lg font-semibold text-foreground">Workflow Tracker</h2>
+            <p className="text-sm text-muted-foreground">Manage outstanding invoices.</p>
         </div>
         <div className="mt-4">
              <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <SearchIcon className="w-4 h-4 text-slate-400" />
+                    <SearchIcon className="w-4 h-4 text-muted-foreground" />
                 </div>
-                <input
+                <Input
                     type="text"
                     placeholder="Search by client name..."
-                    className="flex h-10 w-full rounded-md border border-slate-600 bg-slate-900 px-3 py-2 text-sm pl-9"
+                    className="pl-9"
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
                 />
             </div>
              <div className="mt-2 flex gap-2">
                 {(['all', 'Overdue', 'In Progress'] as const).map(status => (
-                    <button
+                    <Button
                         key={status}
+                        variant={statusFilter === status ? 'default' : 'secondary'}
+                        size="sm"
                         onClick={() => setStatusFilter(status)}
-                        className={`h-auto px-2.5 py-1 text-xs rounded-full font-semibold transition-colors ${statusFilter === status ? 'bg-blue-600 text-white' : 'bg-slate-700 hover:bg-slate-600 text-slate-300'}`}
+                        className="h-auto px-2.5 py-1 text-xs rounded-full font-semibold"
                     >
                         {status === 'all' ? 'All' : status}
-                    </button>
+                    </Button>
                 ))}
             </div>
         </div>
       </div>
-      <div className="border-b border-slate-700 flex-shrink-0">
+      <div className="border-b flex-shrink-0">
         <nav className="flex space-x-2 px-4">
-            <button onClick={() => setActiveTab('my')} className={`px-1 py-2 text-sm h-auto rounded-none transition-colors border-b-2 ${activeTab === 'my' ? 'text-white border-blue-500' : 'text-slate-400 hover:text-white border-transparent'}`}>
+            <button onClick={() => setActiveTab('my')} className={`px-1 py-2 text-sm h-auto rounded-none transition-colors border-b-2 ${activeTab === 'my' ? 'text-foreground border-primary' : 'text-muted-foreground hover:text-foreground border-transparent'}`}>
                 My Queue ({myWorkflows.length})
             </button>
-             <button onClick={() => setActiveTab('all')} className={`px-1 py-2 text-sm h-auto rounded-none transition-colors border-b-2 ${activeTab === 'all' ? 'text-white border-blue-500' : 'text-slate-400 hover:text-white border-transparent'}`}>
+             <button onClick={() => setActiveTab('all')} className={`px-1 py-2 text-sm h-auto rounded-none transition-colors border-b-2 ${activeTab === 'all' ? 'text-foreground border-primary' : 'text-muted-foreground hover:text-foreground border-transparent'}`}>
                 All Active ({allWorkflows.length})
             </button>
         </nav>
       </div>
       <div ref={scrollContainerRef} className="flex-1 p-4 overflow-y-auto space-y-2">
-        <div className="px-1 pb-2 text-xs text-slate-400 italic">
+        <div className="px-1 pb-2 text-xs text-muted-foreground italic">
             Showing {filteredWorkflows.length} {getStatusText()} workflow{filteredWorkflows.length !== 1 && 's'} in "{activeTab === 'my' ? 'My Queue' : 'All Active'}".
         </div>
         {visibleWorkflows.length > 0 ? (
@@ -143,14 +144,14 @@ export const WorkflowTracker: React.FC<WorkflowTrackerProps> = ({ workflows, cur
                 />
             ))
         ) : (
-            <div className="text-center py-10 text-slate-400">
+            <div className="text-center py-10 text-muted-foreground">
                 <p>No workflows match your criteria.</p>
             </div>
         )}
         
         {visibleCount < filteredWorkflows.length && (
             <div ref={loaderRef} className="flex justify-center items-center p-2">
-                <SpinnerIcon className="w-5 h-5 animate-spin text-slate-500"/>
+                <SpinnerIcon className="w-5 h-5 animate-spin text-muted-foreground"/>
             </div>
         )}
       </div>

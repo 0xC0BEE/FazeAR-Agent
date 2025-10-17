@@ -43,14 +43,12 @@ const App: React.FC = () => {
     const [viewingDispute, setViewingDispute] = useState<Workflow | null>(null);
 
     useEffect(() => {
-        // Check for client portal link first
         const urlParams = new URLSearchParams(window.location.search);
         const clientName = urlParams.get('client_name');
         if (clientName) {
             const clientUser = MOCK_USERS.find(u => u.role === 'Client' && u.clientName === clientName);
             if (clientUser) {
                 setCurrentUser(clientUser);
-                // No API key needed for client portal view
                 setApiKey('CLIENT_PORTAL_MODE'); 
                 return;
             }
@@ -68,9 +66,7 @@ const App: React.FC = () => {
         }
     }, [apiKey]);
 
-    // Autonomous agent simulation
     useEffect(() => {
-        // Fix: Changed NodeJS.Timeout to number, which is the correct type for setInterval in a browser environment.
         let interval: number | undefined;
         if (isGlobalAutonomous) {
             interval = setInterval(() => {
@@ -351,7 +347,7 @@ const App: React.FC = () => {
         const response = await generateChatResponse(actionPrompt, 'Default', workflows);
         if (response.text) {
             handleLogCommunication(response.text, workflow);
-            setViewingDispute(null); // Close modal on action
+            setViewingDispute(null);
         } else {
             addNotification('error', 'AI could not complete the action.');
         }
