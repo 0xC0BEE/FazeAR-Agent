@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+// Fix: Corrected import path for types.ts to be explicit.
 import type { Settings, DunningPlan, DunningStep } from '../types.ts';
 import { v4 as uuidv4 } from 'uuid';
 import { XIcon } from './icons/XIcon.tsx';
@@ -6,8 +7,6 @@ import { PlusIcon } from './icons/PlusIcon.tsx';
 import { TrashIcon } from './icons/TrashIcon.tsx';
 import { PencilIcon } from './icons/PencilIcon.tsx';
 import { CheckIcon } from './icons/CheckIcon.tsx';
-import { Button } from './ui/Button.tsx';
-import { Input } from './ui/Input.tsx';
 
 interface SettingsModalProps {
   isOpen: boolean;
@@ -24,6 +23,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, s
 
     useEffect(() => {
         if (isOpen) {
+            // Deep copy to prevent mutation of original state
             setEditablePlans(JSON.parse(JSON.stringify(settings.dunningPlans)));
             setIsAddingPlan(false);
             setNewPlanName('');
@@ -75,6 +75,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, s
         setEditablePlans(prev => prev.map(p => {
             if (p.id === planId) {
                 const updatedSteps = p.steps.map(s => s.id === stepId ? { ...s, [field]: value } : s);
+                // Sort by day after update
                 updatedSteps.sort((a,b) => a.day - b.day);
                 return { ...p, steps: updatedSteps };
             }
@@ -93,17 +94,17 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, s
     
     return (
         <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 transition-opacity duration-300" onClick={onClose}>
-            <div className="bg-card rounded-lg shadow-xl w-full max-w-3xl m-4 border flex flex-col" onClick={e => e.stopPropagation()}>
-                <div className="p-4 flex justify-between items-center border-b">
-                    <h2 className="text-lg font-semibold text-foreground">Settings</h2>
-                    <Button variant="ghost" size="icon" onClick={onClose} className="h-8 w-8">
-                        <XIcon className="w-5 h-5" />
-                    </Button>
+            <div className="bg-slate-800 rounded-lg shadow-xl w-full max-w-3xl m-4 border border-slate-700 transform transition-transform duration-300 scale-100 flex flex-col" onClick={e => e.stopPropagation()}>
+                <div className="p-4 flex justify-between items-center border-b border-slate-700">
+                    <h2 className="text-lg font-semibold text-white">Settings</h2>
+                    <button onClick={onClose} className="p-1 rounded-full text-slate-400 hover:text-white hover:bg-slate-700">
+                        <XIcon className="w-6 h-6" />
+                    </button>
                 </div>
                 
-                <div className="border-b">
+                <div className="border-b border-slate-700">
                     <nav className="flex space-x-2 px-4">
-                        <div className={`px-1 py-2 text-sm font-semibold text-foreground border-b-2 border-primary`}>
+                        <div className={`px-1 py-2 text-sm font-semibold text-white border-b-2 border-blue-500`}>
                             Dunning Plans
                         </div>
                     </nav>
@@ -112,89 +113,90 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, s
                 <div className="p-6 max-h-[60vh] overflow-y-auto">
                    <div className="space-y-4">
                         <div className="flex justify-between items-center">
-                            <h3 className="text-base font-semibold text-foreground">Manage your automated follow-up sequences.</h3>
+                            <h3 className="text-base font-semibold text-white">Manage your automated follow-up sequences.</h3>
                             {!isAddingPlan && (
-                                <Button size="sm" onClick={() => setIsAddingPlan(true)} className="gap-1 text-xs">
+                                <button onClick={() => setIsAddingPlan(true)} className="bg-blue-600 hover:bg-blue-700 text-white gap-1 text-xs h-auto py-1.5 px-3 rounded-md font-semibold flex items-center">
                                     <PlusIcon className="w-4 h-4" />
                                     New Plan
-                                </Button>
+                                </button>
                             )}
                         </div>
                          {isAddingPlan && (
-                            <div className="bg-secondary/50 p-3 rounded-lg border flex gap-2">
-                                <Input
+                            <div className="bg-slate-900/50 p-3 rounded-lg border border-slate-700 flex gap-2">
+                                <input
                                     type="text"
                                     value={newPlanName}
                                     onChange={(e) => setNewPlanName(e.target.value)}
                                     placeholder="New plan name..."
+                                    className="flex h-10 w-full rounded-md border border-slate-600 bg-slate-900 px-3 py-2 text-sm"
                                 />
-                                <Button size="sm" onClick={handleAddNewPlan} className="bg-green-600 hover:bg-green-700">Add</Button>
-                                <Button size="sm" variant="secondary" onClick={() => setIsAddingPlan(false)}>Cancel</Button>
+                                <button onClick={handleAddNewPlan} className="bg-green-600 hover:bg-green-700 text-white text-xs h-auto py-1.5 px-3 rounded-md font-semibold">Add</button>
+                                <button onClick={() => setIsAddingPlan(false)} className="bg-slate-600 hover:bg-slate-500 text-white text-xs h-auto py-1.5 px-3 rounded-md font-semibold">Cancel</button>
                             </div>
                         )}
                         <div className="space-y-3">
                             {editablePlans.map(plan => (
-                                <div key={plan.id} className="bg-secondary/50 p-3 rounded-lg border">
+                                <div key={plan.id} className="bg-slate-900/50 p-3 rounded-lg border border-slate-700">
                                     <div className="flex justify-between items-center mb-3">
                                         {editingPlan?.id === plan.id ? (
                                             <div className="flex-grow flex gap-2 items-center">
-                                                <Input 
+                                                <input 
                                                     type="text"
                                                     value={editingPlan.name}
                                                     onChange={(e) => setEditingPlan({...editingPlan, name: e.target.value})}
-                                                    className="h-8"
+                                                    className="w-full bg-slate-700 border-slate-600 h-8 px-2 rounded-md"
                                                 />
-                                                 <Button variant="ghost" size="icon" onClick={handleUpdatePlanName} className="h-8 w-8 text-green-400"><CheckIcon className="w-4 h-4"/></Button>
-                                                 <Button variant="ghost" size="icon" onClick={() => setEditingPlan(null)} className="h-8 w-8"><XIcon className="w-4 h-4"/></Button>
+                                                 <button onClick={handleUpdatePlanName} className="text-green-400 hover:text-white h-8 w-8 flex items-center justify-center rounded-md hover:bg-slate-700"><CheckIcon className="w-4 h-4"/></button>
+                                                 <button onClick={() => setEditingPlan(null)} className="text-slate-400 hover:text-white h-8 w-8 flex items-center justify-center rounded-md hover:bg-slate-700"><XIcon className="w-4 h-4"/></button>
                                             </div>
                                         ) : (
-                                            <p className="font-semibold text-card-foreground">{plan.name}</p>
+                                            <p className="font-semibold text-slate-200">{plan.name}</p>
                                         )}
                                        
                                         {editingPlan?.id !== plan.id && (
                                             <div className="flex gap-2">
-                                                <Button variant="ghost" size="icon" onClick={() => setEditingPlan({id: plan.id, name: plan.name})} className="h-8 w-8"><PencilIcon className="w-4 h-4"/></Button>
-                                                <Button variant="ghost" size="icon" onClick={() => handleDeletePlan(plan.id)} className="h-8 w-8 text-muted-foreground hover:text-destructive"><TrashIcon className="w-4 h-4"/></Button>
+                                                <button onClick={() => setEditingPlan({id: plan.id, name: plan.name})} className="text-slate-400 hover:text-white h-8 w-8 flex items-center justify-center rounded-md hover:bg-slate-700"><PencilIcon className="w-4 h-4"/></button>
+                                                <button onClick={() => handleDeletePlan(plan.id)} className="text-slate-400 hover:text-red-400 h-8 w-8 flex items-center justify-center rounded-md hover:bg-slate-700"><TrashIcon className="w-4 h-4"/></button>
                                             </div>
                                         )}
                                     </div>
                                     <div className="space-y-2 text-xs">
                                          {plan.steps.map(step => (
-                                            <div key={step.id} className="flex items-center gap-2 bg-background p-1.5 rounded-md">
-                                                <span className="font-semibold text-muted-foreground">Day</span>
-                                                <Input 
+                                            <div key={step.id} className="flex items-center gap-2 bg-slate-800 p-1.5 rounded-md">
+                                                <span className="font-semibold text-slate-400">Day</span>
+                                                <input 
                                                     type="number"
                                                     value={step.day}
                                                     onChange={(e) => handleUpdateStep(plan.id, step.id, 'day', parseInt(e.target.value) || 0)}
-                                                    className="w-16 text-center h-7 px-1"
+                                                    className="w-16 bg-slate-700 text-center rounded-md p-1 h-auto border-transparent focus:border-blue-500 focus:ring-0"
                                                 />
-                                                <span className="font-semibold text-muted-foreground">Template:</span>
-                                                <Input 
+                                                <span className="font-semibold text-slate-400">Template:</span>
+                                                <input 
                                                     type="text"
                                                     value={step.template}
                                                     onChange={(e) => handleUpdateStep(plan.id, step.id, 'template', e.target.value)}
-                                                    className="h-7 px-2"
+                                                    className="w-full bg-slate-700 rounded-md p-1 h-auto border-transparent focus:border-blue-500 focus:ring-0"
                                                 />
-                                                <Button variant="ghost" size="icon" onClick={() => handleDeleteStep(plan.id, step.id)} className="h-7 w-7 text-muted-foreground hover:text-destructive"><TrashIcon className="w-4 h-4"/></Button>
+                                                <button onClick={() => handleDeleteStep(plan.id, step.id)} className="text-slate-500 hover:text-red-400 h-7 w-7 flex items-center justify-center rounded-md hover:bg-slate-700"><TrashIcon className="w-4 h-4"/></button>
                                             </div>
                                         ))}
                                     </div>
-                                     <Button variant="link" size="sm" onClick={() => handleAddStep(plan.id)} className="mt-2 text-primary/80 h-auto p-0 gap-1 flex items-center text-xs">
+                                    <button onClick={() => handleAddStep(plan.id)} className="mt-2 text-blue-400 hover:text-blue-300 text-xs font-semibold h-auto p-0 gap-1 flex items-center">
                                         <PlusIcon className="w-3 h-3"/> Add Step
-                                    </Button>
+                                    </button>
                                 </div>
                             ))}
                         </div>
                     </div>
                 </div>
 
-                <div className="p-4 bg-secondary/30 border-t flex justify-end gap-2">
-                    <Button variant="secondary" onClick={onClose}>
+                <div className="p-4 bg-slate-900/50 border-t border-slate-700 flex justify-end gap-2">
+                    <button onClick={onClose} className="bg-slate-700 hover:bg-slate-600 text-white font-semibold py-2 px-4 rounded-md text-sm">
                         Cancel
-                    </Button>
-                     <Button onClick={handleSaveChanges}>
+                    </button>
+                     <button onClick={handleSaveChanges} className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-md text-sm">
                         Save Changes
-                    </Button>
+                    </button>
                 </div>
             </div>
         </div>

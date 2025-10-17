@@ -470,7 +470,7 @@ const App: React.FC = () => {
     }
 
     return (
-        <div className="bg-background text-foreground font-sans h-screen flex flex-col">
+        <div className="bg-slate-900 text-slate-300 font-sans h-screen flex flex-col">
             <div className="flex-shrink-0 p-4 sm:p-6 lg:p-8 pb-0">
                  <Header 
                     onOpenSettings={() => setIsSettingsOpen(true)}

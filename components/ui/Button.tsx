@@ -33,20 +33,23 @@ const buttonVariants = cva(
   }
 )
 
-{/* Fix: Changed ButtonProps from an interface to a type alias to resolve issues with variant and size prop type inference. */}
+// Fix: Converted interface to a type alias with intersections to potentially resolve a complex type inference issue.
 export type ButtonProps = React.ButtonHTMLAttributes<HTMLButtonElement> &
   VariantProps<typeof buttonVariants> & {
-    asChild?: boolean
-  }
+    asChild?: boolean;
+  };
+
 
 const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
-  ({ className, variant, size, asChild = false, ...props }, ref) => {
+  // Fix: Refactored function signature to destructure props inside the body, which can resolve subtle TypeScript errors.
+  (props, ref) => {
+    const { className, variant, size, asChild = false, ...rest } = props;
     const Comp = asChild ? Slot : "button"
     return (
       <Comp
         className={cn(buttonVariants({ variant, size, className }))}
         ref={ref}
-        {...props}
+        {...rest}
       />
     )
   }
