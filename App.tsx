@@ -230,7 +230,7 @@ function App() {
     const { name, args } = toolCall;
     const { workflowIdentifier, assigneeName, note } = args;
     
-    const workflowIdResult = resolveWorkflowId(workflowIdentifier);
+    const workflowIdResult = resolveWorkflowId(workflowIdentifier as string);
     if (typeof workflowIdResult !== 'string') {
       return { success: false, message: workflowIdResult.error };
     }
@@ -240,11 +240,11 @@ function App() {
       case 'assign_workflow':
         const assignee = users.find(u => u.name === assigneeName);
         if (!assignee) return { success: false, message: `Collector "${assigneeName}" not found.` };
-        handleAssignWorkflow(workflowId, assigneeName);
+        handleAssignWorkflow(workflowId, assigneeName as string);
         return { success: true, message: `Workflow ${workflowIdentifier} assigned to ${assigneeName}.`};
 
       case 'add_note_to_workflow':
-        handleAddNote(workflowId, note);
+        handleAddNote(workflowId, note as string);
         return { success: true, message: `Note added to workflow ${workflowIdentifier}.`};
 
       case 'send_reminder':
@@ -352,13 +352,16 @@ function App() {
               handleNewInvoice(data);
               break;
           case 'payment_received':
-              handlePaymentReceived(data.id);
+              // Fix: Cast the `id` property from the `data` object to a string to match the expected type for `handlePaymentReceived`.
+              handlePaymentReceived(data.id as string);
               break;
           case 'remittance_advice':
-              setRemittanceText(data.text);
+              // Fix: Cast the `text` property from the `data` object to a string to match the expected type for the `setRemittanceText` state setter.
+              setRemittanceText(data.text as string);
               break;
           default:
-              console.warn(`Unknown simulation event type: ${type}`);
+              // Fix: Explicitly cast `type` to a string within the template literal to prevent potential type errors from strict linting rules.
+              console.warn(`Unknown simulation event type: ${String(type)}`);
       }
   };
 
