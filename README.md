@@ -15,26 +15,15 @@ This project is a functional prototype built with React, TypeScript, and Tailwin
 -   **Simulated Webhook Listener:** Demo a modern AR workflow by simulating events like new invoices from QuickBooks or payments received from Stripe.
 -   **Role-Based Access Control:** The UI adapts based on user roles (Admin, Manager, Collector), ensuring users only see the features relevant to them.
 
-## Getting Started (Local Development)
+## Getting Started
 
-While this app is designed to run in a cloud environment like Bolt, you can set it up for local development.
+This application is designed to run on a secure cloud platform that can inject the required `API_KEY` secret.
 
-1.  **Prerequisites:**
-    *   Node.js and npm/yarn installed.
-    *   A valid Google Gemini API Key.
+### How API Keys are Managed
 
-2.  **Installation:**
-    ```bash
-    npm install
-    ```
+This project uses `process.env.API_KEY` to access the Google Gemini API. The key itself is **not** stored in the code for security reasons.
 
-3.  **Configure API Key:**
-    *   Open the `apiKey.ts` file.
-    *   Replace the placeholder `"YOUR_API_KEY_HERE"` with your actual Gemini API key.
-    *   **IMPORTANT:** This file is for local development only. Do not commit it with your key to a public repository. For production, the app is designed to use environment variables (`process.env.API_KEY`).
-
-4.  **Run the Development Server:**
-    ```bash
-    npm run dev
-    ```
-    This will start the Vite development server, and you can access the application in your browser.
+-   The `metadata.json` file contains a `"secrets": ["API_KEY"]` entry.
+-   This tells the deployment platform (like Bolt) that the application requires this secret.
+-   When you publish or run the application, the platform will securely prompt you to provide the API key.
+-   The platform then injects this key into the application's environment, making it securely available to the code without exposing it publicly.
