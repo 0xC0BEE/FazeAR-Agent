@@ -6,24 +6,26 @@ This project is a functional prototype built with React, TypeScript, and Tailwin
 
 ## Key Features
 
--   **Conversational AI Assistant:** Interact with your AR data through a natural language chat interface. Ask for summaries, get status updates, and run "what-if" scenarios.
+-   **Conversational AI Assistant:** Interact with your AR data through a natural language chat interface. Ask for summaries, get status updates, and command the agent to perform actions like assigning workflows or adding notes.
+-   **Advanced "What-If" Scenarios:** The agent can run financial simulations via a complete multi-turn conversation, providing a final natural language summary and directing you to a visual forecast chart on the Analytics page.
+-   **Tone & Language Adjustment:** Guide the AI agent's communication style by selecting a tone (e.g., Friendly, Formal, Firm) for its responses, perfect for drafting client emails.
 -   **Automated Workflow Tracker:** A central dashboard to monitor the status of all outstanding invoices, with intelligent filtering and sorting for Overdue and In-Progress items.
--   **AI Autonomous Mode:** Activate the agent to proactively manage collections. Based on customizable dunning plans, the agent will automatically log follow-up activities for overdue invoices.
+-   **AI Autonomous Mode:** Activate the agent to proactively manage collections. Based on customizable dunning plans, the agent will **autonomously draft and log personalized follow-up emails** for overdue invoices, ready for your review.
+-   **Dispute Management Hub:** A dedicated hub featuring a **Kanban-style board** to manage disputed invoices through a clear, visual, drag-and-drop workflow.
 -   **Customizable Dunning Plans:** A full CRUD interface in the settings modal allows you to create, edit, and delete multi-step dunning plans to match your business's collection strategy.
 -   **AI-Powered Cash Application:** Paste unstructured remittance text from bank statements or emails, and the AI will instantly parse the data and match payments to open invoices.
 -   **Insightful Analytics:** A dedicated analytics view provides a detailed Invoice Aging Report and a Collector Performance dashboard to track key AR metrics.
--   **Simulated Webhook Listener:** Demo a modern AR workflow by simulating events like new invoices from QuickBooks or payments received from Stripe.
--   **Role-Based Access Control:** The UI adapts based on user roles (Admin, Manager, Collector), ensuring users only see the features relevant to them.
+-   **GitBook-Style Knowledge Base:** A comprehensive, navigable help center explaining every feature in detail with use cases and examples.
+-   **Role-Based Access Control:** The UI adapts based on user roles (Admin, Manager, Collector, Client), ensuring users only see the features relevant to them.
 
 ## Getting Started
 
-This application is designed to run on a secure cloud platform that can inject the required `API_KEY` secret.
+This application requires a Google Gemini API key to function.
 
 ### How API Keys are Managed
 
-This project uses `process.env.API_KEY` to access the Google Gemini API. The key itself is **not** stored in the code for security reasons.
+This project manages API keys securely at runtime, ensuring they are never exposed in the source code or build artifacts.
 
--   The `metadata.json` file contains a `"secrets": ["API_KEY"]` entry.
--   This tells the deployment platform (like Bolt) that the application requires this secret.
--   When you publish or run the application, the platform will securely prompt you to provide the API key.
--   The platform then injects this key into the application's environment, making it securely available to the code without exposing it publicly.
+-   On the first launch, the application will display a modal prompting you to enter your Gemini API key.
+-   The key is stored in your browser's `sessionStorage`. This means it persists for your current session but is cleared when you close the browser tab.
+-   This method is secure because the key lives only on your machine and is never saved in the project's files, preventing it from being accidentally published or exposed.

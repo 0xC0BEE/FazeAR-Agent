@@ -1,11 +1,16 @@
+export type Role = 'Admin' | 'Manager' | 'Collector' | 'Client';
+
 export interface User {
   id: string;
   name: string;
-  role: 'Admin' | 'Manager' | 'Collector' | 'Client';
-  clientName?: string;
+  role: Role;
+  clientName?: string; // Only for clients
 }
 
-export interface AuditTrailEntry {
+export type WorkflowStatus = 'Overdue' | 'In Progress' | 'Completed' | 'Disputed';
+export type DisputeStatus = 'New' | 'Under Review' | 'Resolution Proposed' | 'Resolved';
+
+export interface AuditEntry {
   timestamp: string;
   activity: string;
   details: string;
@@ -15,40 +20,36 @@ export interface Workflow {
   id: string;
   clientName: string;
   amount: number;
-  dueDate: string; // YYYY-MM-DD
-  status: 'Overdue' | 'In Progress' | 'Completed';
+  dueDate: string;
+  createdDate: string;
+  status: WorkflowStatus;
   assignee: string;
-  auditTrail: AuditTrailEntry[];
+  auditTrail: AuditEntry[];
   externalId: string;
   dunningPlan: string;
-  paymentDate?: string; // YYYY-MM-DD
-  createdDate: string; // YYYY-MM-DD
+  paymentDate?: string;
   isAutonomous: boolean;
+  disputeStatus?: DisputeStatus;
+  disputeReason?: string;
 }
 
 export interface ToolCall {
-  id: string;
   name: string;
   args: Record<string, any>;
 }
 
-export interface ToolResponse {
-  id: string;
-  name: string;
-  response: any;
-}
-
 export interface ChatMessage {
-  id: string;
-  role: 'user' | 'model' | 'tool';
+  id?: string;
+  role: 'user' | 'model';
   content?: string;
   isThinking?: boolean;
   toolCall?: ToolCall;
-  toolResponse?: ToolResponse;
 }
 
+export type Tone = 'Default' | 'Friendly' | 'Formal' | 'Firm';
+
 export interface DunningStep {
-  id:string;
+  id: string;
   day: number;
   template: string;
 }
@@ -60,10 +61,10 @@ export interface DunningPlan {
 }
 
 export interface Integration {
-  id: 'quickbooks' | 'stripe' | 'gmail';
-  name: string;
-  connected: boolean;
-  description: string;
+    id: 'quickbooks' | 'stripe' | 'gmail';
+    name: string;
+    connected: boolean;
+    description: string;
 }
 
 export interface Settings {
@@ -71,8 +72,17 @@ export interface Settings {
   integrations: Integration[];
 }
 
+export interface Communication {
+    id: string;
+    recipient: string;
+    subject: string;
+    body: string;
+    status: 'Draft' | 'Sent';
+    workflowId: string;
+}
+
 export interface Notification {
-  id: string;
-  message: string;
-  type: 'info' | 'success' | 'error' | 'agent';
+    id: string;
+    message: string;
+    type: 'agent' | 'success' | 'error' | 'info';
 }

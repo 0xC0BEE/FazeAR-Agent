@@ -1,4 +1,3 @@
-// Fix: Implemented the Header component.
 import React from 'react';
 import { SettingsIcon } from './icons/SettingsIcon.tsx';
 import { UserIcon } from './icons/UserIcon.tsx';
@@ -6,7 +5,7 @@ import { ChevronDownIcon } from './icons/ChevronDownIcon.tsx';
 import { BotIcon } from './icons/BotIcon.tsx';
 import type { User } from '../types.ts';
 
-type View = 'dashboard' | 'analytics' | 'integrations' | 'portal';
+type View = 'dashboard' | 'analytics' | 'integrations' | 'portal' | 'knowledge' | 'disputes';
 
 interface HeaderProps {
   onOpenSettings: () => void;
@@ -29,7 +28,7 @@ export const Header: React.FC<HeaderProps> = ({
     isGlobalAutonomous,
     onSetGlobalAutonomous
 }) => {
-  const navItems: Exclude<View, 'portal'>[] = ['dashboard', 'analytics', 'integrations'];
+  const navItems: Exclude<View, 'portal' | 'knowledge'>[] = ['dashboard', 'analytics', 'disputes', 'integrations'];
   const canManageSettings = currentUser.role === 'Admin' || currentUser.role === 'Manager';
   const isClientView = currentUser.role === 'Client';
 
@@ -81,14 +80,14 @@ export const Header: React.FC<HeaderProps> = ({
                     })}
                 </div>
                 <button 
-                    onClick={() => onSetView('portal')}
+                    onClick={() => onSetView('knowledge')}
                     className={`px-3 py-2 text-sm font-semibold rounded-lg transition-colors bg-slate-800 border border-slate-700 ${
-                        currentView === 'portal'
+                        currentView === 'knowledge'
                             ? 'text-white ring-1 ring-blue-500'
                             : 'text-slate-400 hover:bg-slate-700 hover:text-white'
                     }`}
                 >
-                    Client Portal
+                    Knowledge Base
                 </button>
             </>
          )}

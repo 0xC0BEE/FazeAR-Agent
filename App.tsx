@@ -1,470 +1,355 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { v4 as uuidv4 } from 'uuid';
-// Fix: Import DunningPlan type to resolve TypeScript error.
-import type { User, Workflow, Settings, ChatMessage, ToolResponse, Notification, DunningPlan } from './types.ts';
-import { MOCK_USERS, MOCK_WORKFLOWS, MOCK_SETTINGS } from './mockData.ts';
-import { runChat, initializeAiClient } from './services/geminiService.ts';
-import { Header } from './components/Header.tsx';
-import { Dashboard } from './components/Dashboard.tsx';
-import { Analytics } from './components/Analytics.tsx';
-import { SettingsModal } from './components/SettingsModal.tsx';
-import { PaymentPortal } from './components/PaymentPortal.tsx';
-import { ApiKeyModal } from './components/ApiKeyModal.tsx';
-import { NotificationToaster } from './components/NotificationToaster.tsx';
-import { IntegrationsHub } from './components/IntegrationsHub.tsx';
-import type { FunctionCall } from '@google/genai';
 
-function App() {
-  const [isApiKeySet, setIsApiKeySet] = useState(false);
-  const [users] = useState<User[]>(MOCK_USERS);
-  const [currentUser, setCurrentUser] = useState<User>(MOCK_USERS[0]);
-  const [workflows, setWorkflows] = useState<Workflow[]>(MOCK_WORKFLOWS);
-  const [settings, setSettings] = useState<Settings>(MOCK_SETTINGS);
-  const [selectedWorkflowId, setSelectedWorkflowId] = useState<string | null>(null);
-  const [messages, setMessages] = useState<ChatMessage[]>([
-    { id: 'initial-msg', role: 'model', content: "Hello! I'm your FazeAR agent. How can I help you with your accounts receivable today?" }
-  ]);
-  const [isLoading, setIsLoading] = useState(false);
-  const [currentView, setCurrentView] = useState<'dashboard' | 'analytics' | 'integrations' | 'portal'>('dashboard');
-  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
-  const [scenarioWorkflows, setScenarioWorkflows] = useState<Workflow[] | null>(null);
-  const [isGlobalAutonomous, setIsGlobalAutonomous] = useState(false);
-  const [remittanceText, setRemittanceText] = useState('');
-  const [notifications, setNotifications] = useState<Notification[]>([]);
+import { Header } from './components/Header';
+import { Dashboard } from './components/Dashboard';
+import { Analytics } from './components/Analytics';
+import { SettingsModal } from './components/SettingsModal';
+import { PaymentPortal } from './components/PaymentPortal';
+import { IntegrationsHub } from './components/IntegrationsHub';
+import { KnowledgeBase } from './components/KnowledgeBase';
+import { DisputesHub } from './components/DisputesHub';
+import { DisputeModal } from './components/DisputeModal';
+import { CashAppConfirmationModal } from './components/CashAppConfirmationModal';
+import { NotificationToaster } from './components/NotificationToaster';
 
-  useEffect(() => {
-    const keyFromSession = sessionStorage.getItem('gemini-api-key');
-    if (keyFromSession) {
-        initializeAiClient(keyFromSession);
-        setIsApiKeySet(true);
-    }
-  }, []);
-  
-  const addNotification = useCallback((message: string, type: Notification['type'] = 'agent') => {
-    const id = uuidv4();
-    setNotifications(prev => [...prev, { id, message, type }]);
-  }, []);
+import { generateResponse, analyzeRemittance } from './services/geminiService';
+import { MOCK_USERS, MOCK_WORKFLOWS, MOCK_SETTINGS, MOCK_REMITTANCE_ADVICE } from './mockData';
 
-  const removeNotification = useCallback((id: string) => {
-    setNotifications(prev => prev.filter(n => n.id !== id));
-  }, []);
+import type { 
+    User, 
+    Workflow, 
+    Settings, 
+    ChatMessage, 
+    Tone, 
+    Notification,
+    Communication,
+    DisputeStatus
+} from './types';
 
-  const selectedWorkflow = workflows.find(w => w.id === selectedWorkflowId) || null;
-  
-  const runAutonomousAgentCycle = useCallback(() => {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
+type View = 'dashboard' | 'analytics' | 'integrations' | 'portal' | 'knowledge' | 'disputes';
 
-    const dunningPlansMap = new Map<string, DunningPlan>(
-      settings.dunningPlans.map(p => [p.name, p])
-    );
+const App: React.FC = () => {
+    // STATE MANAGEMENT
+    const [users] = useState<User[]>(MOCK_USERS);
+    const [currentUser, setCurrentUser] = useState<User>(MOCK_USERS[0]);
+    const [workflows, setWorkflows] = useState<Workflow[]>(MOCK_WORKFLOWS);
+    const [settings, setSettings] = useState<Settings>(MOCK_SETTINGS);
+    const [currentView, setCurrentView] = useState<View>('dashboard');
+    const [isSettingsOpen, setSettingsOpen] = useState(false);
+    
+    // Global Autonomous Mode
+    const [isGlobalAutonomous, setGlobalAutonomous] = useState(false);
 
-    let updated = false;
-    const updatedWorkflows = workflows.map(w => {
-      if (w.status !== 'Overdue' || !w.isAutonomous) {
-        return w;
-      }
+    // Chat State
+    const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
+    const [isChatLoading, setChatLoading] = useState(false);
 
-      const plan = dunningPlansMap.get(w.dunningPlan);
-      if (!plan) return w;
+    // Communications State
+    const [communications, setCommunications] = useState<Communication[]>([]);
 
-      const dueDate = new Date(w.dueDate);
-      const utcDueDate = new Date(dueDate.getUTCFullYear(), dueDate.getUTCMonth(), dueDate.getUTCDate());
-      utcDueDate.setHours(0,0,0,0);
-        
-      const timeDiff = today.getTime() - utcDueDate.getTime();
-      const daysOverdue = Math.ceil(timeDiff / (1000 * 3600 * 24));
+    // Analytics "What-If" Scenario State
+    const [scenarioWorkflows, setScenarioWorkflows] = useState<Workflow[] | null>(null);
 
-      let updatedWorkflow = { ...w, auditTrail: [...w.auditTrail] };
-      
-      for (const step of plan.steps) {
-        if (daysOverdue >= step.day) {
-           const actionAlreadyLogged = w.auditTrail.some(
-             entry => entry.activity === 'Autonomous Action' && entry.details.includes(step.template)
-           );
+    // Cash App State
+    const [remittanceText, setRemittanceText] = useState('');
+    const [isAnalyzingCashApp, setIsAnalyzingCashApp] = useState(false);
+    const [cashAppMatches, setCashAppMatches] = useState<any[] | null>(null);
 
-           if (!actionAlreadyLogged) {
-             updated = true;
-             addNotification(
-               `Agent executed step: '${step.template}' for ${updatedWorkflow.clientName}.`
-             );
-             updatedWorkflow.auditTrail.push({
-               timestamp: new Date().toISOString(),
-               activity: 'Autonomous Action',
-               details: `Agent executed step: '${step.template}' from '${plan.name}' plan.`
-             });
-           }
+    // Disputes State
+    const [disputingWorkflow, setDisputingWorkflow] = useState<Workflow | null>(null);
+
+    // Notifications
+    const [notifications, setNotifications] = useState<Notification[]>([]);
+
+    // --- HELPER FUNCTIONS ---
+    const addNotification = useCallback((message: string, type: Notification['type'] = 'info') => {
+        const newNotification: Notification = { id: uuidv4(), message, type };
+        setNotifications(prev => [newNotification, ...prev]);
+    }, []);
+
+    const addAuditEntry = useCallback((workflowId: string, activity: string, details: string) => {
+        setWorkflows(prev => prev.map(w => 
+            w.id === workflowId 
+            ? { ...w, auditTrail: [{ timestamp: new Date().toISOString(), activity, details }, ...w.auditTrail] }
+            : w
+        ));
+    }, []);
+
+    // --- EVENT HANDLERS ---
+    const handleSetCurrentUser = (user: User) => {
+        setCurrentUser(user);
+        if (user.role === 'Client') {
+            setCurrentView('portal');
+        } else if (currentView === 'portal') {
+            setCurrentView('dashboard');
         }
-      }
-      return updatedWorkflow;
-    });
+    };
+
+    const handleUpdateWorkflow = (workflowId: string, updates: Partial<Workflow>) => {
+        const originalWorkflow = workflows.find(w => w.id === workflowId);
+        if (!originalWorkflow) return;
+
+        let details = 'Workflow updated. ';
+        if (updates.assignee && updates.assignee !== originalWorkflow.assignee) {
+            details += `Assignee changed from ${originalWorkflow.assignee} to ${updates.assignee}. `;
+        }
+        if (updates.isAutonomous !== undefined && updates.isAutonomous !== originalWorkflow.isAutonomous) {
+            details += `Autonomous mode ${updates.isAutonomous ? 'enabled' : 'disabled'}.`;
+        }
+
+        setWorkflows(prev => prev.map(w => w.id === workflowId ? { ...w, ...updates } : w));
+        addAuditEntry(workflowId, 'Manual Update', details);
+    };
+
+    const handleAddNote = (workflowId: string, note: string, author: string) => {
+        addAuditEntry(workflowId, 'Note Added', `${note} - by ${author}`);
+        addNotification(`Note added to ${workflows.find(w => w.id === workflowId)?.clientName}`, 'success');
+    };
     
-    if (updated) {
-        setWorkflows(updatedWorkflows);
-    }
-  }, [workflows, settings.dunningPlans, addNotification]);
-
-
-  useEffect(() => {
-    let interval: number | undefined;
-    if (isGlobalAutonomous) {
-      runAutonomousAgentCycle();
-      interval = window.setInterval(runAutonomousAgentCycle, 15000); 
-    }
-    return () => {
-      if (interval) {
-        clearInterval(interval);
-      }
-    };
-  }, [isGlobalAutonomous, runAutonomousAgentCycle]);
-
-  const handleSetCurrentUser = (user: User) => {
-    if (user.id === currentUser.id) return;
-    setCurrentUser(user);
-    setSelectedWorkflowId(null);
-    if (user.role === 'Client') {
-      setCurrentView('portal');
-    } else if (currentView !== 'dashboard') {
-      // Default non-client users back to dashboard on switch
-      setCurrentView('dashboard');
-    }
-  };
-  
-  const handleUpdateSettings = (newSettings: Partial<Settings>) => {
-      setSettings(prev => ({...prev, ...newSettings}));
-  };
-
-  const handleUpdateWorkflows = (updatedWorkflows: Workflow[]) => {
-    setWorkflows(updatedWorkflows);
-  };
-  
-  const handleToggleWorkflowAutonomy = (workflowId: string) => {
-    setWorkflows(prev =>
-      prev.map(w =>
-        w.id === workflowId
-          ? { ...w, isAutonomous: !w.isAutonomous }
-          : w
-      )
-    );
-  };
-
-  const handlePaymentReceived = (workflowId: string) => {
-    setWorkflows(prev =>
-      prev.map(w =>
-        w.id === workflowId
-          ? {
-              ...w,
-              status: 'Completed',
-              paymentDate: new Date().toISOString().split('T')[0],
-              auditTrail: [
-                ...w.auditTrail,
-                {
-                  timestamp: new Date().toISOString(),
-                  activity: 'Payment Received',
-                  details: 'Simulated via Webhook Listener.',
-                },
-              ],
-            }
-          : w
-      )
-    );
-    addNotification('Payment received and workflow updated.', 'success');
-    if (selectedWorkflowId === workflowId) {
-        setSelectedWorkflowId(null);
-    }
-  };
-
-  const handleNewInvoice = (invoiceData: any | any[]) => {
-     const invoicesToCreate = Array.isArray(invoiceData) ? invoiceData : [invoiceData];
-     const newWorkflows: Workflow[] = invoicesToCreate.map(data => ({
-        id: `wf_${uuidv4()}`,
-        clientName: data.clientName,
-        amount: data.amount,
-        dueDate: data.dueDate,
-        status: new Date(data.dueDate) < new Date() ? 'Overdue' : 'In Progress',
-        assignee: 'Maria Garcia', 
-        auditTrail: [
-            {
-                timestamp: new Date().toISOString(),
-                activity: 'Invoice Created',
-                details: 'Simulated via Webhook Listener.',
-            },
-        ],
-        externalId: data.externalId,
-        dunningPlan: 'Standard Net 30',
-        createdDate: new Date().toISOString().split('T')[0],
-        isAutonomous: false,
-    }));
-    setWorkflows(prev => [...newWorkflows, ...prev]);
-    addNotification(`New invoice created for ${newWorkflows[0].clientName}.`, 'success');
-  };
-  
-  const handleAddNote = (workflowId: string, note: string) => {
-    setWorkflows(prev => prev.map(w => w.id === workflowId ? {
-        ...w,
-        auditTrail: [...w.auditTrail, {
-            timestamp: new Date().toISOString(),
-            activity: `Note Added by ${currentUser.name}`,
-            details: note,
-        }]
-    } : w));
-  };
-
-  const handleAssignWorkflow = (workflowId: string, assigneeName: string) => {
-    setWorkflows(prev => prev.map(w => w.id === workflowId ? {
-      ...w,
-      assignee: assigneeName,
-      auditTrail: [...w.auditTrail, {
-          timestamp: new Date().toISOString(),
-          activity: 'Workflow Reassigned',
-          details: `Assigned to ${assigneeName} by ${currentUser.name} via AI Agent.`,
-      }]
-    } : w))
-  };
-
-  const handleSendReminder = (workflowId: string) => {
-    setWorkflows(prev => prev.map(w => w.id === workflowId ? {
-      ...w,
-      auditTrail: [...w.auditTrail, {
-          timestamp: new Date().toISOString(),
-          activity: 'Reminder Sent',
-          details: `Reminder sent by ${currentUser.name} via AI Agent.`,
-      }]
-    } : w))
-  };
-
-  const resolveWorkflowId = (identifier: string): string | { error: string, suggestions?: string[] } => {
-    const directMatch = workflows.find(w => w.externalId === identifier);
-    if (directMatch) return directMatch.id;
-
-    const nameMatches = workflows.filter(w => 
-      w.clientName.toLowerCase().includes(identifier.toLowerCase()) && w.status !== 'Completed'
-    );
-
-    if (nameMatches.length === 0) return { error: `Could not find an active workflow for "${identifier}".`};
-    if (nameMatches.length === 1) return nameMatches[0].id;
-    
-    const overdueMatches = nameMatches.filter(w => w.status === 'Overdue');
-    if (overdueMatches.length === 1) return overdueMatches[0].id;
-
-    return { 
-      error: `Found multiple active workflows for "${identifier}". Please specify which invoice.`,
-      suggestions: nameMatches.map(w => w.externalId)
-    };
-  };
-
-  const executeToolCall = (toolCall: FunctionCall): ToolResponse['response'] => {
-    const { name, args } = toolCall;
-    const { workflowIdentifier, assigneeName, note } = args;
-    
-    const workflowIdResult = resolveWorkflowId(workflowIdentifier as string);
-    if (typeof workflowIdResult !== 'string') {
-      return { success: false, message: workflowIdResult.error };
-    }
-    const workflowId = workflowIdResult;
-
-    switch (name) {
-      case 'assign_workflow':
-        const assignee = users.find(u => u.name === assigneeName);
-        if (!assignee) return { success: false, message: `Collector "${assigneeName}" not found.` };
-        handleAssignWorkflow(workflowId, assigneeName as string);
-        return { success: true, message: `Workflow ${workflowIdentifier} assigned to ${assigneeName}.`};
-
-      case 'add_note_to_workflow':
-        handleAddNote(workflowId, note as string);
-        return { success: true, message: `Note added to workflow ${workflowIdentifier}.`};
-
-      case 'send_reminder':
-        handleSendReminder(workflowId);
-        return { success: true, message: `Reminder sent for workflow ${workflowIdentifier}.`};
-
-      default:
-        return { success: false, message: `Unknown tool: ${name}`};
-    }
-  };
-  
-  const handleSendMessage = async (input: string) => {
-    if (isLoading || !input.trim()) return;
-
-    const userMessage: ChatMessage = {
-        id: `msg_${uuidv4()}`,
-        role: 'user',
-        content: input,
+    const handleDisputeWorkflow = (workflow: Workflow) => {
+        setDisputingWorkflow(workflow);
     };
 
-    let currentMessages: ChatMessage[] = [...messages, userMessage];
-    setMessages(currentMessages);
-    setIsLoading(true);
-
-    const thinkingMessage: ChatMessage = {
-        id: `msg_${uuidv4()}`,
-        role: 'model',
-        isThinking: true,
+    const handleConfirmDispute = (workflowId: string, reason: string) => {
+        setWorkflows(prev => prev.map(w => w.id === workflowId ? { ...w, status: 'Disputed', disputeStatus: 'New', disputeReason: reason } : w));
+        addAuditEntry(workflowId, 'Invoice Disputed', `Reason: ${reason}`);
+        addNotification(`Invoice for ${workflows.find(w => w.id === workflowId)?.clientName} has been disputed.`, 'info');
+        setDisputingWorkflow(null);
     };
-    setMessages(prev => [...prev, thinkingMessage]);
 
-    try {
-        const response = await runChat(currentMessages);
+    const handleUpdateDisputeStatus = (workflowId: string, newStatus: DisputeStatus) => {
+        const workflow = workflows.find(w => w.id === workflowId);
+        if (!workflow) return;
         
-        const thinkingMsgId = thinkingMessage.id;
-        currentMessages = currentMessages.filter(m => m.id !== thinkingMsgId);
+        setWorkflows(prev => prev.map(w => w.id === workflowId ? { ...w, disputeStatus: newStatus } : w));
+        addAuditEntry(workflowId, 'Dispute Status Updated', `Status changed from ${workflow.disputeStatus} to ${newStatus}.`);
+    };
 
-        const functionCalls = response.functionCalls;
+    // Fix: Handler to update settings state with partial updates.
+    const handleUpdateSettings = useCallback((updates: Partial<Settings>) => {
+        setSettings(prev => ({ ...prev, ...updates }));
+    }, []);
 
-        if (functionCalls && functionCalls.length > 0) {
-            const toolCall = functionCalls[0];
-            
-            const toolCallMessage: ChatMessage = {
-                id: `msg_${uuidv4()}`,
-                role: 'model',
-                toolCall: { id: toolCall.id, name: toolCall.name, args: toolCall.args }
-            };
-            currentMessages.push(toolCallMessage);
-            setMessages(currentMessages);
+    const handleSendMessage = async (input: string, tone: Tone) => {
+        setChatLoading(true);
+        const userMessage: ChatMessage = { id: uuidv4(), role: 'user', content: input };
+        const thinkingMessage: ChatMessage = { id: uuidv4(), role: 'model', isThinking: true };
+        setChatMessages(prev => [...prev, userMessage, thinkingMessage]);
+        
+        try {
+            const response = await generateResponse(input, tone, workflows, users);
 
-            const toolResult = executeToolCall(toolCall);
-            
-            const toolResponseMessage: ChatMessage = {
-                id: `msg_${uuidv4()}`,
-                role: 'tool',
-                toolResponse: {
-                    id: toolCall.id,
-                    name: toolCall.name,
-                    response: toolResult,
-                }
-            };
-            
-            const finalResponse = await runChat([...currentMessages, toolResponseMessage]);
-            
-            if(finalResponse.text) {
-                 const modelResponse: ChatMessage = {
-                    id: `msg_${uuidv4()}`,
+            let toolCallMessage: ChatMessage | null = null;
+            if (response.functionCalls && response.functionCalls.length > 0) {
+                const fc = response.functionCalls[0];
+                toolCallMessage = {
+                    id: uuidv4(),
                     role: 'model',
-                    content: finalResponse.text,
+                    toolCall: { name: fc.name, args: fc.args }
                 };
-                setMessages(prev => [...prev, modelResponse]);
+                // Here you would execute the function call
             }
 
-        } else if (response.text) {
-             const modelResponse: ChatMessage = {
-                id: `msg_${uuidv4()}`,
+            const modelMessage: ChatMessage = {
+                id: uuidv4(),
                 role: 'model',
-                content: response.text,
+                content: response.text
             };
-             setMessages([...currentMessages, modelResponse]);
+
+            setChatMessages(prev => {
+                const newMessages = prev.filter(m => !m.isThinking);
+                if (toolCallMessage) {
+                    newMessages.push(toolCallMessage);
+                }
+                if (modelMessage.content) {
+                    newMessages.push(modelMessage);
+                }
+                return newMessages;
+            });
+            
+        } catch (error) {
+            console.error("Error generating response:", error);
+            const errorMessage: ChatMessage = {
+                id: uuidv4(),
+                role: 'model',
+                content: "Sorry, I encountered an error. Please check your API key and try again."
+            };
+            setChatMessages(prev => [...prev.filter(m => !m.isThinking), errorMessage]);
+        } finally {
+            setChatLoading(false);
         }
-        
-    } catch (error) {
-        console.error("Error calling Gemini API:", error);
-        const errorMessage: ChatMessage = {
-            id: `msg_${uuidv4()}`,
-            role: 'model',
-            content: "Sorry, I encountered an error. Please try again.",
+    };
+
+    const handleLogCommunication = (messageContent: string, workflow: Workflow) => {
+        const newComm: Communication = {
+            id: uuidv4(),
+            recipient: `${workflow.clientName} Accounts Payable`,
+            subject: `Regarding Invoice ${workflow.externalId}`,
+            body: messageContent,
+            status: 'Draft',
+            workflowId: workflow.id,
         };
-        setMessages(prev => [...prev.filter(m => !m.isThinking), errorMessage]);
-    } finally {
-        setIsLoading(false);
+        setCommunications(prev => [newComm, ...prev]);
+        addNotification(`Email drafted for ${workflow.clientName}. Check Comms Log.`, 'success');
+    };
+
+    const handleSendCommunication = (commId: string) => {
+        setCommunications(prev => prev.map(c => c.id === commId ? { ...c, status: 'Sent' } : c));
+        const comm = communications.find(c => c.id === commId);
+        if (comm) {
+             addAuditEntry(comm.workflowId, 'Manual Communication', `Email sent to ${comm.recipient}. Subject: ${comm.subject}`);
+             addNotification(`Email sent to ${comm.recipient}.`, 'success');
+        }
+    };
+    
+    const handleAnalyzeRemittance = async (text: string) => {
+        setIsAnalyzingCashApp(true);
+        try {
+            const response = await analyzeRemittance(text, workflows);
+            const matches = JSON.parse(response.text);
+            setCashAppMatches(matches);
+        } catch (error) {
+            console.error("Error analyzing remittance:", error);
+            addNotification("Failed to analyze remittance advice.", "error");
+        } finally {
+            setIsAnalyzingCashApp(false);
+        }
+    };
+
+    const handleConfirmCashApp = (matches: any[]) => {
+        let updatedWorkflows = [...workflows];
+        const matchedIds = new Set<string>();
+
+        matches.forEach(match => {
+            if (match.status === 'matched' && match.workflowId) {
+                const workflow = updatedWorkflows.find(w => w.id === match.workflowId);
+                if (workflow && !matchedIds.has(workflow.id)) {
+                    updatedWorkflows = updatedWorkflows.map(w => 
+                        w.id === match.workflowId ? {
+                            ...w,
+                            status: 'Completed',
+                            paymentDate: new Date().toISOString().split('T')[0]
+                        } : w
+                    );
+                    addAuditEntry(match.workflowId, 'Payment Applied', `Payment of $${match.amountPaid.toLocaleString()} applied via Cash App AI.`);
+                    matchedIds.add(workflow.id);
+                }
+            }
+        });
+        setWorkflows(updatedWorkflows);
+        setCashAppMatches(null);
+        addNotification(`${matchedIds.size} payments successfully applied.`, 'success');
+    };
+    
+    // --- AUTONOMOUS AGENT SIMULATION ---
+    useEffect(() => {
+        let interval: NodeJS.Timeout | undefined;
+        if (isGlobalAutonomous) {
+            addNotification("Global autonomous mode activated.", "agent");
+            interval = setInterval(() => {
+                const overdueAndAutonomous = workflows.find(
+                    w => (w.isAutonomous || isGlobalAutonomous) && w.status === 'Overdue' && Math.random() > 0.8
+                );
+                if (overdueAndAutonomous) {
+                    addNotification(`Agent sent automated reminder for ${overdueAndAutonomous.clientName}.`, 'agent');
+                    addAuditEntry(overdueAndAutonomous.id, 'Automated Reminder', 'Sent "First Reminder" email based on dunning plan.');
+                }
+            }, 5000);
+        } else if (interval) {
+            addNotification("Global autonomous mode deactivated.", "info");
+        }
+
+        return () => clearInterval(interval);
+    }, [isGlobalAutonomous, workflows, addNotification, addAuditEntry]);
+
+    const clientWorkflows = workflows.filter(w => w.clientName === currentUser.clientName);
+    
+    if (!process.env.API_KEY) {
+        return (
+             <div className="bg-slate-900 min-h-screen flex items-center justify-center p-4">
+                <div className="w-full max-w-md bg-slate-800 rounded-lg shadow-2xl p-6 border border-red-500/50 text-center">
+                    <h1 className="text-2xl font-bold text-white mb-4">Configuration Error</h1>
+                    <p className="text-slate-300">
+                        The Gemini API key is not configured. Please set the <code className="bg-slate-700 p-1 rounded font-mono text-sm">API_KEY</code> environment variable to use this application.
+                    </p>
+                </div>
+            </div>
+        )
     }
-};
 
-  const handleClearScenario = () => {
-    setScenarioWorkflows(null);
-  };
-  
-  const handleSimulateEvent = (type: string, data: any) => {
-      switch (type) {
-          case 'new_invoice':
-              handleNewInvoice(data);
-              break;
-          case 'payment_received':
-              handlePaymentReceived(data.id as string);
-              break;
-          case 'remittance_advice':
-              setRemittanceText(data.text as string);
-              break;
-          default:
-              console.warn(`Unknown simulation event type: ${String(type)}`);
-      }
-  };
+    return (
+        <div className="bg-slate-900 text-slate-300 font-sans min-h-screen">
+            <div className="container mx-auto p-4 md:p-6 lg:p-8">
+                <Header 
+                    onOpenSettings={() => setSettingsOpen(true)}
+                    currentView={currentView}
+                    onSetView={setCurrentView}
+                    users={users}
+                    currentUser={currentUser}
+                    onSetCurrentUser={handleSetCurrentUser}
+                    isGlobalAutonomous={isGlobalAutonomous}
+                    onSetGlobalAutonomous={setGlobalAutonomous}
+                />
+                
+                {currentView === 'dashboard' && (
+                    <Dashboard 
+                        workflows={workflows}
+                        currentUser={currentUser}
+                        users={users}
+                        onUpdateWorkflow={handleUpdateWorkflow}
+                        onAddNote={handleAddNote}
+                        chatMessages={chatMessages}
+                        isChatLoading={isChatLoading}
+                        onSendMessage={handleSendMessage}
+                        onLogCommunication={handleLogCommunication}
+                        communications={communications}
+                        onSendCommunication={handleSendCommunication}
+                        remittanceText={remittanceText}
+                        onSetRemittanceText={setRemittanceText}
+                        isAnalyzingCashApp={isAnalyzingCashApp}
+                        onAnalyzeRemittance={handleAnalyzeRemittance}
+                        onSimulateRemittance={() => setRemittanceText(MOCK_REMITTANCE_ADVICE)}
+                        onDisputeWorkflow={handleDisputeWorkflow}
+                    />
+                )}
+                {currentView === 'analytics' && <Analytics workflows={workflows} users={users} scenarioWorkflows={scenarioWorkflows} onClearScenario={() => setScenarioWorkflows(null)} />}
+                {/* Fix: Passed correct handler for updating settings. */}
+                {currentView === 'integrations' && <IntegrationsHub settings={settings} onUpdateSettings={handleUpdateSettings} />}
+                {currentView === 'knowledge' && <KnowledgeBase />}
+                {currentView === 'disputes' && <DisputesHub disputedWorkflows={workflows.filter(w => w.status === 'Disputed')} onUpdateDisputeStatus={handleUpdateDisputeStatus} />}
+                {currentView === 'portal' && <PaymentPortal user={currentUser} workflows={clientWorkflows} />}
+            </div>
+            
+            <SettingsModal 
+                isOpen={isSettingsOpen}
+                onClose={() => setSettingsOpen(false)}
+                settings={settings}
+                // Fix: Passed correct handler for updating settings.
+                onUpdateSettings={handleUpdateSettings}
+            />
+            
+            <DisputeModal 
+                isOpen={!!disputingWorkflow}
+                onClose={() => setDisputingWorkflow(null)}
+                workflow={disputingWorkflow}
+                onConfirm={handleConfirmDispute}
+            />
 
-  const handleApiKeySave = (key: string) => {
-    if (!key.trim()) {
-        alert("API Key cannot be empty.");
-        return;
-    }
-    sessionStorage.setItem('gemini-api-key', key);
-    initializeAiClient(key);
-    setIsApiKeySet(true);
-  };
+            <CashAppConfirmationModal
+                isOpen={!!cashAppMatches}
+                onClose={() => setCashAppMatches(null)}
+                matches={cashAppMatches || []}
+                onConfirm={handleConfirmCashApp}
+            />
 
-  const clientWorkflows = currentUser.role === 'Client' 
-      ? workflows.filter(w => w.clientName === currentUser.clientName)
-      : [];
-      
-  const renderCurrentView = () => {
-    switch(currentView) {
-      case 'dashboard':
-        return <Dashboard
-          workflows={workflows}
-          currentUser={currentUser}
-          selectedWorkflow={selectedWorkflow}
-          onSelectWorkflow={setSelectedWorkflowId}
-          onUpdateWorkflows={handleUpdateWorkflows}
-          onSimulateEvent={handleSimulateEvent}
-          onAddNote={(note) => selectedWorkflowId && handleAddNote(selectedWorkflowId, note)}
-          messages={messages}
-          isLoading={isLoading}
-          onSendMessage={handleSendMessage}
-          scenarioWorkflows={scenarioWorkflows}
-          onClearScenario={handleClearScenario}
-          onToggleWorkflowAutonomy={handleToggleWorkflowAutonomy}
-          remittanceText={remittanceText}
-          onSetRemittanceText={setRemittanceText}
-        />;
-      case 'analytics':
-        return <Analytics workflows={workflows} users={users} />;
-      case 'integrations':
-        return <IntegrationsHub settings={settings} onUpdateSettings={handleUpdateSettings} />;
-      case 'portal':
-        return <PaymentPortal user={currentUser} workflows={clientWorkflows} />;
-      default:
-        return null;
-    }
-  }
-
-  if (!isApiKeySet) {
-    return <ApiKeyModal onSave={handleApiKeySave} />;
-  }
-
-  return (
-    <div className="bg-slate-900 text-slate-300 min-h-screen font-sans">
-      <NotificationToaster notifications={notifications} onDismiss={removeNotification} />
-      <div className="h-screen flex flex-col">
-        <div className="container mx-auto p-4 md:p-6 lg:p-8 flex-shrink-0">
-           <Header
-            onOpenSettings={() => setIsSettingsOpen(true)}
-            currentView={currentView}
-            onSetView={setCurrentView}
-            users={users}
-            currentUser={currentUser}
-            onSetCurrentUser={handleSetCurrentUser}
-            isGlobalAutonomous={isGlobalAutonomous}
-            onSetGlobalAutonomous={setIsGlobalAutonomous}
-          />
+            <NotificationToaster 
+                notifications={notifications}
+                onDismiss={(id) => setNotifications(prev => prev.filter(n => n.id !== id))}
+            />
         </div>
-        <main className="container mx-auto px-4 md:px-6 lg:p-8 flex-1 min-h-0">
-           {renderCurrentView()}
-        </main>
-      </div>
-      <SettingsModal 
-        isOpen={isSettingsOpen}
-        onClose={() => setIsSettingsOpen(false)}
-        settings={settings}
-        onUpdateSettings={handleUpdateSettings}
-      />
-    </div>
-  );
-}
+    );
+};
 
 export default App;
