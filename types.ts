@@ -63,9 +63,16 @@ export interface Integration {
   id: 'quickbooks' | 'stripe' | 'gmail';
   name: string;
   connected: boolean;
+  description: string;
 }
 
 export interface Settings {
   dunningPlans: DunningPlan[];
   integrations: Integration[];
+}
+
+export interface Notification {
+  id: string;
+  message: string;
+  type: 'info' | 'success' | 'error' | 'agent';
 }

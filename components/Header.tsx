@@ -6,10 +6,12 @@ import { ChevronDownIcon } from './icons/ChevronDownIcon.tsx';
 import { BotIcon } from './icons/BotIcon.tsx';
 import type { User } from '../types.ts';
 
+type View = 'dashboard' | 'analytics' | 'integrations' | 'portal';
+
 interface HeaderProps {
   onOpenSettings: () => void;
-  currentView: 'dashboard' | 'analytics' | 'portal';
-  onSetView: (view: 'dashboard' | 'analytics' | 'portal') => void;
+  currentView: View;
+  onSetView: (view: View) => void;
   users: User[];
   currentUser: User;
   onSetCurrentUser: (user: User) => void;
@@ -27,7 +29,7 @@ export const Header: React.FC<HeaderProps> = ({
     isGlobalAutonomous,
     onSetGlobalAutonomous
 }) => {
-  const navItems: ('dashboard' | 'analytics')[] = ['dashboard', 'analytics'];
+  const navItems: Exclude<View, 'portal'>[] = ['dashboard', 'analytics', 'integrations'];
   const canManageSettings = currentUser.role === 'Admin' || currentUser.role === 'Manager';
   const isClientView = currentUser.role === 'Client';
 
@@ -62,6 +64,7 @@ export const Header: React.FC<HeaderProps> = ({
                 <div className="bg-slate-800 border border-slate-700 rounded-lg p-1 flex gap-1">
                     {navItems.map(item => {
                         if (item === 'analytics' && !canManageSettings) return null;
+                        if (item === 'integrations' && !canManageSettings) return null;
                         return (
                         <button 
                             key={item}

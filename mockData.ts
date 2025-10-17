@@ -87,9 +87,9 @@ export const MOCK_SETTINGS: Settings = {
     },
   ],
   integrations: [
-    { id: 'quickbooks', name: 'QuickBooks', connected: true },
-    { id: 'stripe', name: 'Stripe', connected: true },
-    { id: 'gmail', name: 'Gmail', connected: false },
+    { id: 'quickbooks', name: 'QuickBooks', connected: true, description: 'Automatically sync invoices, customers, and payments from your QuickBooks Online account.' },
+    { id: 'stripe', name: 'Stripe', connected: true, description: 'Connect your Stripe account to sync payment statuses and enable the client payment portal.' },
+    { id: 'gmail', name: 'Gmail', connected: false, description: 'Allow the FazeAR agent to send automated reminders and communications directly from your email.' },
   ],
 };
 

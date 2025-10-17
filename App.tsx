@@ -1,6 +1,8 @@
+
 import React, { useState, useEffect, useCallback } from 'react';
 import { v4 as uuidv4 } from 'uuid';
-import type { User, Workflow, Settings, ChatMessage, DunningPlan, ToolCall, ToolResponse } from './types.ts';
+// Fix: Import DunningPlan type to resolve TypeScript error.
+import type { User, Workflow, Settings, ChatMessage, ToolResponse, Notification, DunningPlan } from './types.ts';
 import { MOCK_USERS, MOCK_WORKFLOWS, MOCK_SETTINGS } from './mockData.ts';
 import { runChat, initializeAiClient } from './services/geminiService.ts';
 import { Header } from './components/Header.tsx';
@@ -9,6 +11,8 @@ import { Analytics } from './components/Analytics.tsx';
 import { SettingsModal } from './components/SettingsModal.tsx';
 import { PaymentPortal } from './components/PaymentPortal.tsx';
 import { ApiKeyModal } from './components/ApiKeyModal.tsx';
+import { NotificationToaster } from './components/NotificationToaster.tsx';
+import { IntegrationsHub } from './components/IntegrationsHub.tsx';
 import type { FunctionCall } from '@google/genai';
 
 function App() {
@@ -22,11 +26,12 @@ function App() {
     { id: 'initial-msg', role: 'model', content: "Hello! I'm your FazeAR agent. How can I help you with your accounts receivable today?" }
   ]);
   const [isLoading, setIsLoading] = useState(false);
-  const [currentView, setCurrentView] = useState<'dashboard' | 'analytics' | 'portal'>('dashboard');
+  const [currentView, setCurrentView] = useState<'dashboard' | 'analytics' | 'integrations' | 'portal'>('dashboard');
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [scenarioWorkflows, setScenarioWorkflows] = useState<Workflow[] | null>(null);
   const [isGlobalAutonomous, setIsGlobalAutonomous] = useState(false);
   const [remittanceText, setRemittanceText] = useState('');
+  const [notifications, setNotifications] = useState<Notification[]>([]);
 
   useEffect(() => {
     const keyFromSession = sessionStorage.getItem('gemini-api-key');
@@ -34,6 +39,15 @@ function App() {
         initializeAiClient(keyFromSession);
         setIsApiKeySet(true);
     }
+  }, []);
+  
+  const addNotification = useCallback((message: string, type: Notification['type'] = 'agent') => {
+    const id = uuidv4();
+    setNotifications(prev => [...prev, { id, message, type }]);
+  }, []);
+
+  const removeNotification = useCallback((id: string) => {
+    setNotifications(prev => prev.filter(n => n.id !== id));
   }, []);
 
   const selectedWorkflow = workflows.find(w => w.id === selectedWorkflowId) || null;
@@ -46,6 +60,7 @@ function App() {
       settings.dunningPlans.map(p => [p.name, p])
     );
 
+    let updated = false;
     const updatedWorkflows = workflows.map(w => {
       if (w.status !== 'Overdue' || !w.isAutonomous) {
         return w;
@@ -70,6 +85,10 @@ function App() {
            );
 
            if (!actionAlreadyLogged) {
+             updated = true;
+             addNotification(
+               `Agent executed step: '${step.template}' for ${updatedWorkflow.clientName}.`
+             );
              updatedWorkflow.auditTrail.push({
                timestamp: new Date().toISOString(),
                activity: 'Autonomous Action',
@@ -80,9 +99,11 @@ function App() {
       }
       return updatedWorkflow;
     });
-
-    setWorkflows(updatedWorkflows);
-  }, [workflows, settings.dunningPlans]);
+    
+    if (updated) {
+        setWorkflows(updatedWorkflows);
+    }
+  }, [workflows, settings.dunningPlans, addNotification]);
 
 
   useEffect(() => {
@@ -104,9 +125,8 @@ function App() {
     setSelectedWorkflowId(null);
     if (user.role === 'Client') {
       setCurrentView('portal');
-    } else if (user.role === 'Collector' && currentView === 'analytics') {
-      setCurrentView('dashboard');
-    } else if (currentView === 'portal') {
+    } else if (currentView !== 'dashboard') {
+      // Default non-client users back to dashboard on switch
       setCurrentView('dashboard');
     }
   };
@@ -149,6 +169,7 @@ function App() {
           : w
       )
     );
+    addNotification('Payment received and workflow updated.', 'success');
     if (selectedWorkflowId === workflowId) {
         setSelectedWorkflowId(null);
     }
@@ -176,6 +197,7 @@ function App() {
         isAutonomous: false,
     }));
     setWorkflows(prev => [...newWorkflows, ...prev]);
+    addNotification(`New invoice created for ${newWorkflows[0].clientName}.`, 'success');
   };
   
   const handleAddNote = (workflowId: string, note: string) => {
@@ -380,12 +402,44 @@ function App() {
       ? workflows.filter(w => w.clientName === currentUser.clientName)
       : [];
       
+  const renderCurrentView = () => {
+    switch(currentView) {
+      case 'dashboard':
+        return <Dashboard
+          workflows={workflows}
+          currentUser={currentUser}
+          selectedWorkflow={selectedWorkflow}
+          onSelectWorkflow={setSelectedWorkflowId}
+          onUpdateWorkflows={handleUpdateWorkflows}
+          onSimulateEvent={handleSimulateEvent}
+          onAddNote={(note) => selectedWorkflowId && handleAddNote(selectedWorkflowId, note)}
+          messages={messages}
+          isLoading={isLoading}
+          onSendMessage={handleSendMessage}
+          scenarioWorkflows={scenarioWorkflows}
+          onClearScenario={handleClearScenario}
+          onToggleWorkflowAutonomy={handleToggleWorkflowAutonomy}
+          remittanceText={remittanceText}
+          onSetRemittanceText={setRemittanceText}
+        />;
+      case 'analytics':
+        return <Analytics workflows={workflows} users={users} />;
+      case 'integrations':
+        return <IntegrationsHub settings={settings} onUpdateSettings={handleUpdateSettings} />;
+      case 'portal':
+        return <PaymentPortal user={currentUser} workflows={clientWorkflows} />;
+      default:
+        return null;
+    }
+  }
+
   if (!isApiKeySet) {
     return <ApiKeyModal onSave={handleApiKeySave} />;
   }
 
   return (
     <div className="bg-slate-900 text-slate-300 min-h-screen font-sans">
+      <NotificationToaster notifications={notifications} onDismiss={removeNotification} />
       <div className="h-screen flex flex-col">
         <div className="container mx-auto p-4 md:p-6 lg:p-8 flex-shrink-0">
            <Header
@@ -400,32 +454,7 @@ function App() {
           />
         </div>
         <main className="container mx-auto px-4 md:px-6 lg:p-8 flex-1 min-h-0">
-           {currentView === 'dashboard' ? (
-            <Dashboard
-                workflows={workflows}
-                currentUser={currentUser}
-                selectedWorkflow={selectedWorkflow}
-                onSelectWorkflow={setSelectedWorkflowId}
-                onUpdateWorkflows={handleUpdateWorkflows}
-                onSimulateEvent={handleSimulateEvent}
-                onAddNote={(note) => selectedWorkflowId && handleAddNote(selectedWorkflowId, note)}
-                messages={messages}
-                isLoading={isLoading}
-                onSendMessage={handleSendMessage}
-                scenarioWorkflows={scenarioWorkflows}
-                onClearScenario={handleClearScenario}
-                onToggleWorkflowAutonomy={handleToggleWorkflowAutonomy}
-                remittanceText={remittanceText}
-                onSetRemittanceText={setRemittanceText}
-            />
-          ) : currentView === 'analytics' ? (
-            <Analytics workflows={workflows} users={users} />
-          ) : (
-            <PaymentPortal 
-              user={currentUser}
-              workflows={clientWorkflows}
-            />
-          )}
+           {renderCurrentView()}
         </main>
       </div>
       <SettingsModal 
