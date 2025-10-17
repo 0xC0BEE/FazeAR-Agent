@@ -8,7 +8,8 @@ import { Dashboard } from './components/Dashboard.tsx';
 import { Analytics } from './components/Analytics.tsx';
 import { SettingsModal } from './components/SettingsModal.tsx';
 import { PaymentPortal } from './components/PaymentPortal.tsx';
-import type { FunctionCallPart } from '@google/genai';
+// Fix: Use FunctionCall type for tool calls from the Gemini API response, as FunctionCallPart is not exported.
+import type { FunctionCall } from '@google/genai';
 
 function App() {
   const [users] = useState<User[]>(MOCK_USERS);
@@ -224,7 +225,8 @@ function App() {
     };
   };
 
-  const executeToolCall = (toolCall: FunctionCallPart): ToolResponse['response'] => {
+  // Fix: The response from Gemini contains a FunctionCall object, not a FunctionCallPart.
+  const executeToolCall = (toolCall: FunctionCall): ToolResponse['response'] => {
     const { name, args } = toolCall;
     const { workflowIdentifier, assigneeName, note } = args;
     

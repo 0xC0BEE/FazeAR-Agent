@@ -1,15 +1,8 @@
-import { GoogleGenAI, Type, GenerateContentResponse, Content, FunctionDeclaration, FunctionCallPart } from "@google/genai";
-import type { ChatMessage, Workflow, User, ToolResponse } from '../types.ts';
+import { GoogleGenAI, Type, GenerateContentResponse, Content, FunctionDeclaration } from "@google/genai";
+import type { ChatMessage } from '../types.ts';
 
-let ai: GoogleGenAI | null = null;
-
-// Singleton client getter to lazy-initialize the AI client
-const getAiClient = (): GoogleGenAI => {
-    if (!ai) {
-        ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-    }
-    return ai;
-}
+// Initialize the AI client at the top level for platform compatibility.
+const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
 
 const tools: FunctionDeclaration[] = [
   {
@@ -65,11 +58,10 @@ const tools: FunctionDeclaration[] = [
 ];
 
 export const runChat = async (messages: ChatMessage[]): Promise<GenerateContentResponse> => {
-  const client = getAiClient();
-  
   const geminiHistory: Content[] = messages
     .filter(m => !m.isThinking)
-    .map(msg => {
+    // Fix: Add explicit 'Content | null' return type to the map function to satisfy the type predicate in the following filter.
+    .map((msg): Content | null => {
         if (msg.role === 'user') {
             return { role: 'user', parts: [{ text: msg.content || '' }] };
         }
@@ -89,7 +81,7 @@ export const runChat = async (messages: ChatMessage[]): Promise<GenerateContentR
         return null;
     }).filter((m): m is Content => m !== null);
 
-  const response = await client.models.generateContent({
+  const response = await ai.models.generateContent({
     model: 'gemini-2.5-flash',
     contents: geminiHistory,
     config: {
@@ -106,10 +98,9 @@ export const runChat = async (messages: ChatMessage[]): Promise<GenerateContentR
  * @returns A GenerateContentResponse containing the parsed data in its text property.
  */
 export const analyzeCashApplication = async (remittanceText: string): Promise<GenerateContentResponse> => {
-    const client = getAiClient();
     const prompt = `Analyze the following remittance text and extract the payment information into a structured JSON array. For each payment, provide the client's name, the invoice ID referenced, and the amount paid. Text: "${remittanceText}"`;
 
-    const response = await client.models.generateContent({
+    const response = await ai.models.generateContent({
         model: "gemini-2.5-flash",
         contents: prompt,
         config: {
