@@ -29,60 +29,67 @@ export const Header: React.FC<HeaderProps> = ({
 }) => {
   const navItems: ('dashboard' | 'analytics')[] = ['dashboard', 'analytics'];
   const canManageSettings = currentUser.role === 'Admin' || currentUser.role === 'Manager';
+  const isClientView = currentUser.role === 'Client';
 
   return (
     <header className="flex flex-col sm:flex-row justify-between sm:items-center mb-6 gap-4">
       <div>
         <h1 className="text-3xl font-bold text-white">FazeAR Agent</h1>
-        <p className="text-slate-400">Automated Accounts Receivable Management</p>
+        <p className="text-slate-400">{isClientView ? 'Client Payment Portal' : 'Automated Accounts Receivable Management'}</p>
       </div>
       <div className="flex items-center gap-2">
          <div className="relative group">
             <button className="flex items-center gap-2 bg-slate-800 border border-slate-700 rounded-lg p-2 text-sm font-semibold transition-colors hover:bg-slate-700">
                 <UserIcon className="w-5 h-5 text-slate-400" />
-                <span>{currentUser.name}</span>
+                <span>{currentUser.name} {currentUser.role === 'Client' && `(${currentUser.clientName})`}</span>
                 <ChevronDownIcon className="w-4 h-4 text-slate-400" />
             </button>
-            <div className="absolute right-0 mt-2 w-48 bg-slate-800 border border-slate-700 rounded-lg shadow-lg p-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none group-hover:pointer-events-auto z-10">
+            <div className="absolute right-0 mt-2 w-56 bg-slate-800 border border-slate-700 rounded-lg shadow-lg p-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none group-hover:pointer-events-auto z-10">
                 {users.map(user => (
                     <button 
                         key={user.id}
                         onClick={() => onSetCurrentUser(user)}
                         className={`w-full text-left px-3 py-1.5 text-sm rounded-md ${currentUser.id === user.id ? 'bg-blue-600 text-white' : 'text-slate-300 hover:bg-slate-700'}`}
                     >
-                        {user.name}
+                        {user.name} ({user.role})
                     </button>
                 ))}
             </div>
          </div>
-         <div className="bg-slate-800 border border-slate-700 rounded-lg p-1 flex gap-1">
-             {navItems.map(item => {
-                if (item === 'analytics' && !canManageSettings) return null;
-                return (
-                 <button 
-                    key={item}
-                    onClick={() => onSetView(item)}
-                    className={`px-3 py-1.5 text-sm font-semibold rounded-md transition-colors ${
-                        currentView === item
-                            ? 'bg-slate-700 text-white'
-                            : 'text-slate-400 hover:bg-slate-700/50 hover:text-white'
+         
+         {!isClientView && (
+            <>
+                <div className="bg-slate-800 border border-slate-700 rounded-lg p-1 flex gap-1">
+                    {navItems.map(item => {
+                        if (item === 'analytics' && !canManageSettings) return null;
+                        return (
+                        <button 
+                            key={item}
+                            onClick={() => onSetView(item)}
+                            className={`px-3 py-1.5 text-sm font-semibold rounded-md transition-colors ${
+                                currentView === item
+                                    ? 'bg-slate-700 text-white'
+                                    : 'text-slate-400 hover:bg-slate-700/50 hover:text-white'
+                            }`}
+                        >
+                            {item.charAt(0).toUpperCase() + item.slice(1)}
+                        </button>
+                        )
+                    })}
+                </div>
+                <button 
+                    onClick={() => onSetView('portal')}
+                    className={`px-3 py-2 text-sm font-semibold rounded-lg transition-colors bg-slate-800 border border-slate-700 ${
+                        currentView === 'portal'
+                            ? 'text-white ring-1 ring-blue-500'
+                            : 'text-slate-400 hover:bg-slate-700 hover:text-white'
                     }`}
-                 >
-                    {item.charAt(0).toUpperCase() + item.slice(1)}
-                 </button>
-                )
-            })}
-         </div>
-          <button 
-            onClick={() => onSetView('portal')}
-            className={`px-3 py-2 text-sm font-semibold rounded-lg transition-colors bg-slate-800 border border-slate-700 ${
-                currentView === 'portal'
-                    ? 'text-white ring-1 ring-blue-500'
-                    : 'text-slate-400 hover:bg-slate-700 hover:text-white'
-            }`}
-          >
-             Client Portal
-          </button>
+                >
+                    Client Portal
+                </button>
+            </>
+         )}
+
          {canManageSettings && (
             <>
             <div className="flex items-center gap-2 bg-slate-800 border border-slate-700 rounded-lg pl-3 pr-1 py-1 text-sm">
@@ -97,7 +104,7 @@ export const Header: React.FC<HeaderProps> = ({
                     onChange={(e) => onSetGlobalAutonomous(e.target.checked)}
                     className="sr-only peer"
                   />
-                  <div className="w-11 h-6 bg-slate-600 rounded-full peer peer-focus:ring-2 peer-focus:ring-purple-500 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-purple-600"></div>
+                  <div className="w-11 h-6 bg-slate-600 rounded-full peer peer-focus:ring-2 peer-focus:ring-purple-500 peer-checked:after:translate-x-full peer-checked:after:border-white after:content[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-purple-600"></div>
                 </label>
             </div>
              <button

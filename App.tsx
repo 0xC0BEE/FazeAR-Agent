@@ -93,8 +93,12 @@ function App() {
     if (user.id === currentUser.id) return;
     setCurrentUser(user);
     setSelectedWorkflowId(null);
-    if ((user.role === 'Collector' && currentView === 'analytics') || currentView === 'portal') {
-        setCurrentView('dashboard');
+    if (user.role === 'Client') {
+      setCurrentView('portal');
+    } else if (user.role === 'Collector' && currentView === 'analytics') {
+      setCurrentView('dashboard');
+    } else if (currentView === 'portal') {
+      setCurrentView('dashboard');
     }
   };
   
@@ -356,6 +360,10 @@ function App() {
       }
   };
 
+  const clientWorkflows = currentUser.role === 'Client' 
+      ? workflows.filter(w => w.clientName === currentUser.clientName)
+      : [];
+
   return (
     <div className="bg-slate-900 text-slate-300 min-h-screen font-sans">
       <div className="h-screen flex flex-col">
@@ -393,7 +401,10 @@ function App() {
           ) : currentView === 'analytics' ? (
             <Analytics workflows={workflows} users={users} />
           ) : (
-            <PaymentPortal />
+            <PaymentPortal 
+              user={currentUser}
+              workflows={clientWorkflows}
+            />
           )}
         </main>
       </div>

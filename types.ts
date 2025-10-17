@@ -1,7 +1,8 @@
 export interface User {
   id: string;
   name: string;
-  role: 'Admin' | 'Manager' | 'Collector';
+  role: 'Admin' | 'Manager' | 'Collector' | 'Client';
+  clientName?: string;
 }
 
 export interface AuditTrailEntry {

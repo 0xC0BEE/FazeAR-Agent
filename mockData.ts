@@ -9,6 +9,7 @@ export const MOCK_USERS: User[] = [
   { id: '2', name: 'Maria Garcia', role: 'Manager' },
   { id: '3', name: 'David Chen', role: 'Collector' },
   { id: '4', name: 'Sarah Lee', role: 'Collector' },
+  { id: '5', name: 'John Smith', role: 'Client', clientName: 'Quantum Dynamics' },
 ];
 
 const generateWorkflows = (): Workflow[] => {
