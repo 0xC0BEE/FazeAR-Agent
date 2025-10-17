@@ -4,4 +4,4 @@
 // `process.env.API_KEY` environment variable as per project guidelines.
 // Please set this environment variable in your deployment environment.
 
-export const GEMINI_API_KEY = "AIzaSyCpVrO3DEa-YuY-0szehl4MEvrEg4ozoPw";
+export const GEMINI_API_KEY = "AIzaSyCpVrO3DEaYuY-0szehl4MEvrEg4ozoPw";
