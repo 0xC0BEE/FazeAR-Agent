@@ -1,7 +1,9 @@
+
 import React from 'react';
-import type { Communication } from '../types';
-import { MailIcon } from './icons/MailIcon';
-import { PaperAirplaneIcon } from './icons/PaperAirplaneIcon';
+// Fix: Corrected import path for types.ts to be explicit.
+import type { Communication } from '../types.ts';
+import { MailIcon } from './icons/MailIcon.tsx';
+import { PaperAirplaneIcon } from './icons/PaperAirplaneIcon.tsx';
 
 interface CommunicationsLogProps {
   communications: Communication[];

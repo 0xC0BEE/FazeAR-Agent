@@ -1,7 +1,9 @@
+
 import React, { useState, useEffect } from 'react';
-import type { Workflow } from '../types';
-import { XIcon } from './icons/XIcon';
-import { ExclamationIcon } from './icons/ExclamationIcon';
+// Fix: Corrected import path for types.ts to be explicit.
+import type { Workflow } from '../types.ts';
+import { XIcon } from './icons/XIcon.tsx';
+import { ExclamationIcon } from './icons/ExclamationIcon.tsx';
 
 interface DisputeModalProps {
   isOpen: boolean;

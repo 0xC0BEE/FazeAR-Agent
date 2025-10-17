@@ -1,110 +1,168 @@
 import { v4 as uuidv4 } from 'uuid';
-import type { User, Workflow, Settings } from './types.ts';
-
-const today = new Date();
-const formatDate = (date: Date) => date.toISOString().split('T')[0];
+import type { User, Workflow, Settings, DunningPlan, InvoiceItem } from './types.ts';
 
 export const MOCK_USERS: User[] = [
-  { id: '1', name: 'Alex Johnson', role: 'Admin' },
-  { id: '2', name: 'Maria Garcia', role: 'Manager' },
-  { id: '3', name: 'David Chen', role: 'Collector' },
-  { id: '4', name: 'Sarah Lee', role: 'Collector' },
-  { id: '5', name: 'John Smith', role: 'Client', clientName: 'Quantum Dynamics' },
+  { id: 'user_1', name: 'Alice (Admin)', role: 'Admin' },
+  { id: 'user_2', name: 'Bob (Manager)', role: 'Manager' },
+  { id: 'user_3', name: 'Charlie (Collector)', role: 'Collector' },
+  { id: 'user_4', name: 'Sarah Lee', role: 'Collector' },
+  { id: 'user_5', name: 'John Smith (Client)', role: 'Client', clientName: 'Starlight Enterprises' },
 ];
 
-const generateWorkflows = (): Workflow[] => {
-    const assignees = ['David Chen', 'Sarah Lee', 'Maria Garcia'];
-    const clients = ['Innovate Corp', 'Nexus Solutions', 'Quantum Dynamics', 'Starlight Enterprises', 'Apex Industries', 'Momentum Labs'];
-    const plans = ['Standard Net 30', 'Aggressive', 'Gentle Reminder'];
-    
-    let workflows: Workflow[] = [];
+const formatDate = (date: Date) => date.toISOString().split('T')[0];
 
-    for (let i = 0; i < 25; i++) {
-        const createDateOffset = Math.floor(Math.random() * 90);
-        const createdDate = new Date(today.getTime() - createDateOffset * 24 * 60 * 60 * 1000);
-        const dueDate = new Date(createdDate.getTime() + 30 * 24 * 60 * 60 * 1000);
-        const isOverdue = today > dueDate;
-        const isCompleted = Math.random() > 0.7;
-        
-        let status: 'Overdue' | 'In Progress' | 'Completed' = 'In Progress';
-        if (isCompleted) {
-            status = 'Completed';
-        } else if (isOverdue) {
-            status = 'Overdue';
+const createDate = (daysOffset: number): string => {
+    const date = new Date();
+    date.setDate(date.getDate() + daysOffset);
+    return formatDate(date);
+};
+
+const standardDunningPlanId = "plan_standard_v1";
+
+const generateRandomItems = (baseAmount: number): { items: InvoiceItem[], total: number } => {
+    const items: InvoiceItem[] = [];
+    let remainingAmount = baseAmount;
+    
+    if (Math.random() > 0.3) { // 70% chance of multiple items
+        const numItems = Math.floor(Math.random() * 3) + 2; // 2-4 items
+        for (let i = 0; i < numItems - 1; i++) {
+            const portion = remainingAmount * (Math.random() * 0.4 + 0.2); // 20-60% of remaining
+            const price = Math.floor(portion / 100) * 100 + (Math.random() > 0.5 ? 50 : 0);
+            const quantity = 1;
+            items.push({
+                description: `Service Item #${Math.floor(Math.random() * 1000)}`,
+                quantity,
+                price
+            });
+            remainingAmount -= price;
         }
+    }
+    
+    items.push({
+        description: `Final Service #${Math.floor(Math.random() * 1000)}`,
+        quantity: 1,
+        price: remainingAmount
+    });
+
+    const total = items.reduce((sum, item) => sum + item.price * item.quantity, 0);
+    return { items, total };
+}
+
+
+const generateWorkflows = (): Workflow[] => {
+    const clientNames = ['Quantum Dynamics', 'Starlight Enterprises', 'Innovate Corp', 'Apex Industries', 'Meridian Group', 'Nexus Solutions'];
+    const assignees = ['Charlie (Collector)', 'Sarah Lee'];
+    const statuses: Workflow['status'][] = ['Overdue', 'In Progress'];
+    
+    const workflows: Workflow[] = [];
+
+    for (let i = 0; i < 15; i++) {
+        const baseAmount = Math.floor(Math.random() * 25000) + 5000;
+        const { items, total } = generateRandomItems(baseAmount);
+        const dueDateOffset = Math.floor(Math.random() * 90) - 60; // -60 to +30 days from today
+        const createdDateOffset = dueDateOffset - (Math.floor(Math.random() * 15) + 30);
+        const status = new Date(createDate(dueDateOffset)) < new Date() ? 'Overdue' : 'In Progress';
 
         workflows.push({
-            id: `wf_${uuidv4()}`,
-            clientName: clients[i % clients.length],
-            amount: Math.floor(Math.random() * (25000 - 1000 + 1)) + 1000,
-            dueDate: formatDate(dueDate),
+            id: uuidv4(),
+            clientName: clientNames[i % clientNames.length],
+            amount: total,
+            dueDate: createDate(dueDateOffset),
             status: status,
             assignee: assignees[i % assignees.length],
-            auditTrail: [
-                { timestamp: new Date(createdDate.getTime() + 1 * 24 * 60 * 60 * 1000).toISOString(), activity: 'Invoice Created', details: 'Automatically generated via QuickBooks integration.' },
-                ...(status === 'Overdue' ? [{ timestamp: new Date(dueDate.getTime() + 2 * 24 * 60 * 60 * 1000).toISOString(), activity: 'Reminder Sent', details: 'Automated email reminder sent.' }] : []),
-                ...(status === 'Completed' ? [{ timestamp: new Date(dueDate.getTime() - 5 * 24 * 60 * 60 * 1000).toISOString(), activity: 'Payment Received', details: 'Payment processed via Stripe.' }] : [])
-            ],
-            externalId: `inv_${1001 + i}`,
-            dunningPlan: plans[i % plans.length],
-            paymentDate: status === 'Completed' ? formatDate(new Date(dueDate.getTime() - 5 * 24 * 60 * 60 * 1000)) : undefined,
-            createdDate: formatDate(createdDate),
-            isAutonomous: status === 'Overdue' && Math.random() > 0.5, // Randomly set some overdue invoices to autonomous
+            isAutonomous: Math.random() > 0.5,
+            externalId: `qb_${88201 + i}`,
+            auditTrail: [{ timestamp: createDate(createdDateOffset), activity: 'Invoice Created', details: 'Generated from QuickBooks integration.' }],
+            communications: [],
+            dunningPlanId: standardDunningPlanId,
+            disputeStatus: null,
+            disputeReason: null,
+            createdDate: createDate(createdDateOffset),
+            paymentDate: null,
+            items: items,
         });
     }
+
+    // Add specific cases
+    workflows[3].disputeStatus = 'New';
+    workflows[3].disputeReason = "Client claims goods were not received.";
+    workflows[3].status = 'Overdue';
+
+    workflows.push({
+        id: 'workflow_completed_1',
+        clientName: 'Starlight Enterprises',
+        amount: 4500.00,
+        dueDate: createDate(-35),
+        status: 'Completed',
+        assignee: 'Sarah Lee',
+        isAutonomous: false,
+        externalId: 'qb_88199',
+        auditTrail: [],
+        communications: [],
+        dunningPlanId: null,
+        disputeStatus: null,
+        disputeReason: null,
+        createdDate: createDate(-65),
+        paymentDate: createDate(-20),
+        items: [{ description: 'Consulting Services', quantity: 1, price: 4500.00 }]
+    });
+
     return workflows;
-};
+}
 
 export const MOCK_WORKFLOWS: Workflow[] = generateWorkflows();
 
+const standardDunningPlan: DunningPlan = {
+    id: standardDunningPlanId,
+    name: 'Standard Follow-up',
+    steps: [
+        { id: uuidv4(), day: 1, template: 'First Reminder' },
+        { id: uuidv4(), day: 7, template: 'Second Reminder' },
+        { id: uuidv4(), day: 15, template: 'Final Notice' },
+        { id: uuidv4(), day: 30, template: 'Escalation to Manager' },
+    ]
+};
+
+const aggressiveDunningPlan: DunningPlan = {
+    id: "plan_aggressive_v1",
+    name: 'Aggressive Follow-up',
+    steps: [
+        { id: uuidv4(), day: 1, template: 'Immediate Overdue Notice' },
+        { id: uuidv4(), day: 3, template: 'Call Reminder' },
+        { id: uuidv4(), day: 7, template: 'Demand Letter' },
+    ]
+};
+
+
 export const MOCK_SETTINGS: Settings = {
-  dunningPlans: [
-    {
-      id: 'plan1',
-      name: 'Standard Net 30',
-      steps: [
-        { id: 's1', day: 1, template: 'First Reminder' },
-        { id: 's2', day: 7, template: 'Second Reminder' },
-        { id: 's3', day: 15, template: 'Final Notice' },
-      ],
-    },
-    {
-      id: 'plan2',
-      name: 'Aggressive',
-      steps: [
-        { id: 's4', day: 1, template: 'Immediate Follow-up' },
-        { id: 's5', day: 3, template: 'Second Follow-up' },
-        { id: 's6', day: 5, template: 'Escalation Notice' },
-      ],
-    },
-     {
-      id: 'plan3',
-      name: 'Gentle Reminder',
-      steps: [
-        { id: 's7', day: 3, template: 'Friendly Reminder' },
-        { id: 's8', day: 14, template: 'Gentle Follow-up' },
-      ],
-    },
-  ],
-  integrations: [
-    { id: 'quickbooks', name: 'QuickBooks', connected: true, description: 'Automatically sync invoices, customers, and payments from your QuickBooks Online account.' },
-    { id: 'stripe', name: 'Stripe', connected: true, description: 'Connect your Stripe account to sync payment statuses and enable the client payment portal.' },
-    { id: 'gmail', name: 'Gmail', connected: false, description: 'Allow the FazeAR agent to send automated reminders and communications directly from your email.' },
-  ],
+    dunningPlans: [standardDunningPlan, aggressiveDunningPlan],
+    integrations: [
+        { id: 'quickbooks', name: 'QuickBooks', description: 'Sync invoices, customers, and payments automatically from your QuickBooks Online account.', connected: true },
+        { id: 'stripe', name: 'Stripe', description: 'Enable clients to pay invoices directly via a secure portal using credit card or ACH.', connected: true },
+        { id: 'gmail', name: 'Gmail', description: 'Connect your inbox to send emails directly and parse incoming remittance advice.', connected: false },
+    ]
 };
 
 export const MOCK_REMITTANCE_ADVICE = `
-From: accounting@innovatecorp.com
-Subject: Payment Advice
-
 Hi Team,
 
-Please see attached remittance for our latest wire transfer.
+Please see attached remittance for payments processed today, 07/26/2024.
 
-- Invoice inv_1001, Amount: $12550.00 (Innovate Corp)
-- Inv # inv_1004, Paid: $8300 (For Starlight)
-- Apex Industries payment for inv_1005 for 21000 dollars
+Vendor: Innovate Corp
+Payment Ref: 9901-BXI-23
+Total Amount: $22,750.00
+
+Invoice Number: qb_88203
+Amount: 22750.00
+
+---
+Also processing payment for Quantum.
+
+*Invoice qb_88201, $15,200.50*
+
+Let me know if you have questions.
 
 Thanks,
-John @ Innovate
+Jane Doe
+Accounts Payable
 `;

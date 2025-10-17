@@ -1,28 +1,26 @@
-import { GoogleGenAI, Chat, GenerateContentResponse, Type, FunctionDeclaration } from "@google/genai";
-import type { Workflow, Tone, User } from '../types';
+import { GoogleGenAI, FunctionDeclaration, Type, GenerateContentResponse } from '@google/genai';
+import type { ChatMessage, Workflow, Tone, Match, Settings, User } from '../types.ts';
 
 if (!process.env.API_KEY) {
-    console.warn("API_KEY environment variable is not set. AI features will not work.");
+    console.warn("API_KEY environment variable not set. Using a placeholder.");
+    process.env.API_KEY = "mock-api-key-for-development";
 }
 
-// Initialize with a placeholder if the key is missing to avoid crashing the app on startup.
-const ai = new GoogleGenAI({ apiKey: process.env.API_KEY || " " });
-const model = 'gemini-2.5-flash';
+const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
 
-// --- Function Declarations for the model ---
 const assignWorkflow: FunctionDeclaration = {
     name: 'assign_workflow',
-    description: 'Assigns a workflow (invoice) to a specific collector.',
+    description: 'Assigns a workflow (invoice) for a specific client to a user.',
     parameters: {
         type: Type.OBJECT,
         properties: {
             clientName: {
                 type: Type.STRING,
-                description: 'The name of the client associated with the workflow.'
+                description: 'The name of the client associated with the workflow to be assigned.'
             },
             assigneeName: {
                 type: Type.STRING,
-                description: 'The name of the collector to assign the workflow to.'
+                description: 'The name of the user to whom the workflow should be assigned.'
             }
         },
         required: ['clientName', 'assigneeName']
@@ -31,133 +29,122 @@ const assignWorkflow: FunctionDeclaration = {
 
 const addNoteToWorkflow: FunctionDeclaration = {
     name: 'add_note_to_workflow',
-    description: 'Adds a note to a specific client\'s workflow.',
+    description: 'Adds a note to a workflow for a specific client.',
     parameters: {
         type: Type.OBJECT,
         properties: {
             clientName: {
                 type: Type.STRING,
-                description: 'The name of the client associated with the workflow.'
+                description: 'The name of the client to whose workflow the note will be added.'
             },
             note: {
                 type: Type.STRING,
-                description: 'The content of the note to add.'
+                description: 'The content of the note to be added.'
             }
         },
         required: ['clientName', 'note']
     }
 };
 
-const sendReminder: FunctionDeclaration = {
-    name: 'send_reminder',
-    description: 'Sends a reminder for a specific invoice.',
+const disputeInvoice: FunctionDeclaration = {
+    name: 'dispute_invoice',
+    description: 'Marks an invoice for a client as disputed and provides a reason.',
     parameters: {
         type: Type.OBJECT,
         properties: {
-            invoiceId: {
+            clientName: {
                 type: Type.STRING,
-                description: 'The external ID of the invoice (e.g., "inv_1001").'
+                description: 'The name of the client whose invoice is being disputed.'
             },
+            reason: {
+                type: Type.STRING,
+                description: 'The reason for the dispute.'
+            }
         },
-        required: ['invoiceId']
+        required: ['clientName', 'reason']
     }
-};
-
-// --- Service Functions ---
-
-let chat: Chat | null = null;
-
-function initializeChat(workflows: Workflow[], users: User[]) {
-    const collectorNames = users.filter(u => u.role === 'Collector' || u.role === 'Manager' || u.role === 'Admin').map(u => u.name).join(', ');
-
-    const workflowSummary = workflows
-        .filter(w => w.status !== 'Completed')
-        .map(w => `- Client: ${w.clientName}, Invoice ID: ${w.externalId}, Amount: $${w.amount.toLocaleString()}, Due: ${w.dueDate}, Assignee: ${w.assignee}`)
-        .join('\n');
-
-    const systemInstruction = `You are an expert Accounts Receivable AI assistant named FazeAR. 
-Your primary role is to help collections agents manage their workflows efficiently.
-You can use tools to perform actions like assigning workflows, adding notes, and sending reminders.
-When asked about data, provide concise answers based on the provided context. 
-If you need to perform an action, use the available tools.
-Do not invent information. If you don't know, say you don't know.
-
-The current date is ${new Date().toLocaleDateString()}.
-Available collectors: ${collectorNames}.
-
-Here is the current list of outstanding workflows:
-${workflowSummary}
-`;
-    
-    chat = ai.chats.create({
-        model: model,
-        config: {
-            systemInstruction: systemInstruction,
-            tools: [{ functionDeclarations: [assignWorkflow, addNoteToWorkflow, sendReminder] }]
-        }
-    });
 }
 
-
-export const generateResponse = async (
-    newMessage: string,
-    tone: Tone,
-    allWorkflows: Workflow[],
-    users: User[]
-): Promise<GenerateContentResponse> => {
-    
-    if (!process.env.API_KEY) {
-        return { text: "Error: API_KEY is not configured.", functionCalls: [] } as unknown as GenerateContentResponse;
+const viewInvoice: FunctionDeclaration = {
+    name: 'view_invoice',
+    description: 'Displays the detailed invoice for a specific client.',
+    parameters: {
+        type: Type.OBJECT,
+        properties: {
+            clientName: {
+                type: Type.STRING,
+                description: 'The name of the client whose invoice should be displayed.'
+            }
+        },
+        required: ['clientName']
     }
-    
-    // Re-initialize chat on every message to ensure it has the latest workflow data.
-    initializeChat(allWorkflows, users);
-    
-    let prompt = newMessage;
-    
-    if (tone !== 'Default') {
-        prompt = `Using a ${tone.toLowerCase()} tone, ${prompt}`;
-    }
-
-    if (!chat) throw new Error("Chat not initialized");
-    
-    return await chat.sendMessage({ message: prompt });
 };
 
-export const analyzeRemittance = async (remittanceText: string, workflows: Workflow[]) => {
-     if (!process.env.API_KEY) {
-        return { text: JSON.stringify([{ clientName: "Error: API Key not configured", invoiceId: "N/A", amountPaid: 0, workflowId: null, status: "unmatched" }]), functionCalls: [] } as unknown as GenerateContentResponse;
+const functionDeclarations = [assignWorkflow, addNoteToWorkflow, disputeInvoice, viewInvoice];
+
+export const generateChatResponse = async (
+    prompt: string, 
+    tone: Tone,
+    workflows: Workflow[]
+) : Promise<{ text: string | null, toolCall: { name: string, args: any } | null }> => {
+    
+    const systemInstruction = `You are an AI assistant for an accounts receivable platform called FazeAR. Your purpose is to help collectors manage workflows, communicate with clients, and analyze data.
+    - Today's date is ${new Date().toLocaleDateString()}.
+    - When asked to draft communication, keep it concise and professional. The current tone preference is: ${tone}. Also fulfill general requests to draft content like emails.
+    - You have access to a set of tools to perform actions. Use them when a user's request matches a tool's description.
+    - Here is a summary of the current outstanding workflows: ${JSON.stringify(workflows.filter(w => w.status !== 'Completed').map(w => ({client: w.clientName, amount: w.amount, due: w.dueDate, status: w.status, assignee: w.assignee})))}. Do not list this data unless asked. Use it for context.
+    - When a tool call is made, do not add any conversational text.
+    `;
+
+    try {
+        const response: GenerateContentResponse = await ai.models.generateContent({
+            model: 'gemini-2.5-pro',
+            contents: { role: 'user', parts: [{ text: prompt }] },
+            config: {
+                systemInstruction: { role: 'system', parts: [{ text: systemInstruction }] },
+                tools: [{ functionDeclarations }]
+            }
+        });
+        
+        let toolCall: { name: string, args: any } | null = null;
+        if (response.functionCalls && response.functionCalls.length > 0) {
+            toolCall = {
+                name: response.functionCalls[0].name,
+                args: response.functionCalls[0].args,
+            }
+        }
+        
+        return { text: response.text || null, toolCall };
+
+    } catch (error) {
+        console.error('Error generating chat response:', error);
+        return { text: "I'm sorry, I encountered an error while processing your request.", toolCall: null };
     }
+};
+
+export const analyzeRemittanceAdvice = async (text: string, workflows: Workflow[]): Promise<Match[]> => {
     const prompt = `
-Analyze the following remittance advice text. For each payment mentioned, extract the client name, the invoice reference/ID, and the amount paid. 
-Then, match each payment to an outstanding invoice from the provided list of workflows.
+        Analyze the following remittance advice text. For each payment mentioned, extract the client name or identifier, the invoice number or reference, and the amount paid.
+        Then, match each payment to one of the provided open workflows. 
+        A successful match requires the invoice ID to be present in the workflow's externalId and the amount to be identical.
+        If the amount is different, it's a partial match. If no workflow is found, it's unmatched.
+        
+        Remittance Text:
+        ---
+        ${text}
+        ---
+        
+        Open Workflows:
+        ---
+        ${JSON.stringify(workflows.filter(w => w.status !== 'Completed').map(w => ({ workflowId: w.id, clientName: w.clientName, externalId: w.externalId, amount: w.amount })))}
+        ---
+    `;
 
-A workflow is "matched" if the invoice ID and client name are found and the amount is correct.
-If the invoice ID is found but the client is different or the amount is a partial payment, mark as "partial".
-If no matching invoice can be found, mark as "unmatched".
-
-Return the result as a JSON array of objects.
-
-Remittance Text:
----
-${remittanceText}
----
-
-Outstanding Workflows for matching:
----
-${JSON.stringify(workflows.filter(w => w.status !== 'Completed').map(w => ({
-    workflowId: w.id,
-    clientName: w.clientName,
-    invoiceId: w.externalId,
-    amountDue: w.amount
-})), null, 2)}
----
-`;
     const response = await ai.models.generateContent({
-        model: model,
+        model: 'gemini-2.5-pro',
         contents: prompt,
         config: {
-            responseMimeType: 'application/json',
+            responseMimeType: "application/json",
             responseSchema: {
                 type: Type.ARRAY,
                 items: {
@@ -166,17 +153,93 @@ ${JSON.stringify(workflows.filter(w => w.status !== 'Completed').map(w => ({
                         clientName: { type: Type.STRING },
                         invoiceId: { type: Type.STRING },
                         amountPaid: { type: Type.NUMBER },
-                        workflowId: { type: Type.STRING },
-                        status: {
-                            type: Type.STRING,
-                            enum: ['matched', 'partial', 'unmatched'],
-                        }
+                        workflowId: { type: Type.STRING, nullable: true },
+                        status: { type: Type.STRING, enum: ['matched', 'partial', 'unmatched'] },
                     },
-                    required: ['clientName', 'invoiceId', 'amountPaid', 'status']
+                    required: ["clientName", "invoiceId", "amountPaid", "status"]
                 }
             }
         }
     });
 
-    return response;
+    try {
+        const jsonText = response.text.trim();
+        const matches = JSON.parse(jsonText) as Match[];
+        return matches;
+    } catch (e) {
+        console.error("Failed to parse JSON response for remittance advice", e);
+        throw new Error("Could not analyze remittance advice.");
+    }
+};
+
+export const runAnalyticsQuery = async (prompt: string, workflows: Workflow[], users: User[]): Promise<string> => {
+    const systemInstruction = `You are a data analyst for an AR platform. Answer the user's question based on the provided JSON data for workflows and users. Provide a concise, text-based answer.
+    
+    Workflows Data: ${JSON.stringify(workflows)}
+    Users Data: ${JSON.stringify(users.filter(u => u.role !== 'Client'))}
+    `;
+
+    const response = await ai.models.generateContent({
+        model: 'gemini-2.5-pro',
+        contents: prompt,
+        config: {
+            systemInstruction,
+        }
+    });
+
+    return response.text;
+};
+
+
+export const generateWhatIfScenario = async (prompt: string, originalWorkflows: Workflow[]): Promise<Workflow[]> => {
+    const systemInstruction = `You are a financial planning AI. The user will provide a "what-if" scenario. Your task is to modify the provided list of workflows according to the scenario and return ONLY the modified list of workflows as a valid JSON array. Do not include any other text or explanations.
+    
+    Original Workflows: ${JSON.stringify(originalWorkflows)}
+    `;
+
+    // Create a deep copy to avoid mutating original state
+    let scenarioWorkflows = JSON.parse(JSON.stringify(originalWorkflows)) as Workflow[];
+
+    const response = await ai.models.generateContent({
+        model: 'gemini-2.5-pro',
+        contents: prompt,
+        config: {
+            systemInstruction,
+            responseMimeType: "application/json",
+            responseSchema: {
+                type: Type.ARRAY,
+                items: {
+                    type: Type.OBJECT,
+                    properties: {
+                        id: { type: Type.STRING },
+                        clientName: { type: Type.STRING },
+                        amount: { type: Type.NUMBER },
+                        dueDate: { type: Type.STRING, description: "Date in YYYY-MM-DD format" },
+                        status: { type: Type.STRING, enum: ['Overdue', 'In Progress', 'Completed'] },
+                        assignee: { type: Type.STRING },
+                        isAutonomous: { type: Type.BOOLEAN },
+                        externalId: { type: Type.STRING },
+                        auditTrail: { type: Type.ARRAY, items: { type: Type.OBJECT } },
+                        communications: { type: Type.ARRAY, items: { type: Type.OBJECT } },
+                        dunningPlanId: { type: Type.STRING, nullable: true },
+                        disputeStatus: { type: Type.STRING, nullable: true },
+                        disputeReason: { type: Type.STRING, nullable: true },
+                        createdDate: { type: Type.STRING },
+                        paymentDate: { type: Type.STRING, nullable: true },
+                        items: { type: Type.ARRAY, items: { type: Type.OBJECT } },
+                    }
+                }
+            }
+        }
+    });
+
+    try {
+        const jsonText = response.text.trim();
+        const updatedWorkflows = JSON.parse(jsonText) as Workflow[];
+        return updatedWorkflows;
+    } catch (e) {
+        console.error("Failed to parse JSON response for what-if scenario", e);
+        // Return original workflows on failure
+        return originalWorkflows;
+    }
 };

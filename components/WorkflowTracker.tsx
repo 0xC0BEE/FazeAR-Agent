@@ -1,4 +1,6 @@
+
 import React, { useState, useRef, useEffect } from 'react';
+// Fix: Corrected import path for types.ts to be explicit.
 import type { Workflow, User } from '../types.ts';
 import { WorkflowCard } from './WorkflowCard.tsx';
 import { SearchIcon } from './icons/SearchIcon.tsx';

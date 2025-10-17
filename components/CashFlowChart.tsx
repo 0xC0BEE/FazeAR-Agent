@@ -1,4 +1,6 @@
+
 import React from 'react';
+// Fix: Corrected import path for types.ts to be explicit.
 import type { Workflow } from '../types.ts';
 import { XIcon } from './icons/XIcon.tsx';
 

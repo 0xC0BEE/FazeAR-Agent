@@ -1,7 +1,9 @@
 
+
 import React from 'react';
-import type { Workflow } from '../types';
-import { XIcon } from './icons/XIcon';
+// Fix: Corrected import path for types.ts to be explicit.
+import type { Workflow } from '../types.ts';
+import { XIcon } from './icons/XIcon.tsx';
 
 interface WorkflowDetailModalProps {
   isOpen: boolean;

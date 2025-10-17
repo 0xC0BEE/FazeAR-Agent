@@ -1,4 +1,6 @@
+
 import React, { useState } from 'react';
+// Fix: Corrected import path for types.ts to be explicit.
 import type { User, Workflow } from '../types.ts';
 import { CreditCardIcon } from './icons/CreditCardIcon.tsx';
 import { SpinnerIcon } from './icons/SpinnerIcon.tsx';

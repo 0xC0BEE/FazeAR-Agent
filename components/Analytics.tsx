@@ -1,4 +1,6 @@
+
 import React from 'react';
+// Fix: Corrected import path for types.ts to be explicit.
 import type { Workflow, User } from '../types.ts';
 import { AgingReport } from './AgingReport.tsx';
 import { CollectorPerformance } from './CollectorPerformance.tsx';

@@ -1,5 +1,7 @@
 
+
 import React, { useState, useRef, useEffect } from 'react';
+// Fix: Corrected import path for types.ts to be explicit.
 import type { ChatMessage, Tone, Workflow } from '../types.ts';
 import { PaperAirplaneIcon } from './icons/PaperAirplaneIcon.tsx';
 import { SpinnerIcon } from './icons/SpinnerIcon.tsx';

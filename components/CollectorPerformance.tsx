@@ -1,5 +1,7 @@
 
+
 import React from 'react';
+// Fix: Corrected import path for types.ts to be explicit.
 import type { Workflow, User } from '../types.ts';
 import { UserIcon } from './icons/UserIcon.tsx';
 

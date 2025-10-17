@@ -1,4 +1,6 @@
+
 import React, { useEffect, useState } from 'react';
+// Fix: Corrected import path for types.ts to be explicit.
 import type { Notification as NotificationType } from '../types.ts';
 import { BotIcon } from './icons/BotIcon.tsx';
 import { CheckCircleIcon } from './icons/CheckCircleIcon.tsx';

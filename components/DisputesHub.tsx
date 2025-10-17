@@ -1,9 +1,11 @@
+
 import React from 'react';
-import type { Workflow, DisputeStatus } from '../types';
-import { ExclamationIcon } from './icons/ExclamationIcon';
-import { DollarIcon } from './icons/DollarIcon';
-import { UserIcon } from './icons/UserIcon';
-import { CalendarIcon } from './icons/CalendarIcon';
+// Fix: Corrected import path for types.ts to be explicit.
+import type { Workflow, DisputeStatus } from '../types.ts';
+import { ExclamationIcon } from './icons/ExclamationIcon.tsx';
+import { DollarIcon } from './icons/DollarIcon.tsx';
+import { UserIcon } from './icons/UserIcon.tsx';
+import { CalendarIcon } from './icons/CalendarIcon.tsx';
 
 interface DisputesHubProps {
   disputedWorkflows: Workflow[];

@@ -1,4 +1,6 @@
+
 import React, { useState, useEffect } from 'react';
+// Fix: Corrected import path for types.ts to be explicit.
 import type { Settings, DunningPlan, DunningStep } from '../types.ts';
 import { v4 as uuidv4 } from 'uuid';
 import { XIcon } from './icons/XIcon.tsx';

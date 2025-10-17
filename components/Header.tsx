@@ -1,8 +1,10 @@
+
 import React from 'react';
 import { SettingsIcon } from './icons/SettingsIcon.tsx';
 import { UserIcon } from './icons/UserIcon.tsx';
 import { ChevronDownIcon } from './icons/ChevronDownIcon.tsx';
 import { BotIcon } from './icons/BotIcon.tsx';
+// Fix: Corrected import path for types.ts to be explicit.
 import type { User } from '../types.ts';
 
 type View = 'dashboard' | 'analytics' | 'integrations' | 'portal' | 'knowledge' | 'disputes';

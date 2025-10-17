@@ -1,4 +1,6 @@
+
 import React from 'react';
+// Fix: Corrected import path for types.ts to be explicit.
 import type { Settings, Integration } from '../types.ts';
 import { QuickBooksIcon } from './icons/QuickBooksIcon.tsx';
 import { StripeIcon } from './icons/StripeIcon.tsx';

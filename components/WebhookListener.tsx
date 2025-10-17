@@ -1,7 +1,10 @@
+
 import React, { useState } from 'react';
+// Fix: Corrected import path for types.ts to be explicit.
 import type { Workflow } from '../types.ts';
 import { WebhookIcon } from './icons/WebhookIcon.tsx';
 import { v4 as uuidv4 } from 'uuid';
+// Fix: Corrected import path for mockData.ts to be explicit.
 import { MOCK_REMITTANCE_ADVICE } from '../mockData.ts';
 
 interface WebhookListenerProps {
