@@ -1,4 +1,3 @@
-
 import React from 'react';
 // Fix: Corrected import path for types.ts to be explicit.
 import type { Workflow } from '../types.ts';
@@ -77,7 +76,7 @@ export const CashFlowChart: React.FC<CashFlowChartProps> = ({ workflows, scenari
               <p className="font-semibold text-purple-200">Showing "What-If" Scenario</p>
               <button 
                 onClick={onClearScenario}
-                className="flex items-center gap-1 text-xs font-semibold text-purple-200 hover:text-white bg-purple-800/50 hover:bg-purple-700 px-2 py-1 rounded-md transition-colors"
+                className="flex items-center gap-1 text-xs font-semibold text-purple-200 hover:text-white bg-purple-800/50 hover:bg-purple-700 px-2 py-1 h-auto rounded-md"
               >
                 <XIcon className="w-3 h-3" />
                 Clear

@@ -1,16 +1,18 @@
-
 import React from 'react';
 // Fix: Corrected import path for types.ts to be explicit.
-import type { Settings, Integration } from '../types.ts';
+import type { Settings, Integration, Workflow } from '../types.ts';
 import { QuickBooksIcon } from './icons/QuickBooksIcon.tsx';
 import { StripeIcon } from './icons/StripeIcon.tsx';
 import { GmailIcon } from './icons/GmailIcon.tsx';
 import { LinkIcon } from './icons/LinkIcon.tsx';
 import { CheckCircleIcon } from './icons/CheckCircleIcon.tsx';
+import { WebhookListener } from './WebhookListener.tsx';
 
 interface IntegrationsHubProps {
   settings: Settings;
   onUpdateSettings: (settings: Partial<Settings>) => void;
+  workflows: Workflow[];
+  onSimulateEvent: (type: string, data: any) => void;
 }
 
 const IntegrationCard: React.FC<{ integration: Integration, onToggle: (id: Integration['id']) => void }> = ({ integration, onToggle }) => {
@@ -60,7 +62,7 @@ const IntegrationCard: React.FC<{ integration: Integration, onToggle: (id: Integ
 };
 
 
-export const IntegrationsHub: React.FC<IntegrationsHubProps> = ({ settings, onUpdateSettings }) => {
+export const IntegrationsHub: React.FC<IntegrationsHubProps> = ({ settings, onUpdateSettings, workflows, onSimulateEvent }) => {
 
     const handleIntegrationToggle = (id: Integration['id']) => {
         const updatedIntegrations = settings.integrations.map(int => 
@@ -83,6 +85,13 @@ export const IntegrationsHub: React.FC<IntegrationsHubProps> = ({ settings, onUp
                     onToggle={handleIntegrationToggle}
                 />
             ))}
+        </div>
+
+        <div className="mt-12 max-w-2xl mx-auto">
+             <WebhookListener 
+                workflows={workflows}
+                onSimulateEvent={onSimulateEvent}
+             />
         </div>
     </div>
   );

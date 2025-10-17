@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 // Fix: Corrected import path for types.ts to be explicit.
 import type { Settings, DunningPlan, DunningStep } from '../types.ts';
@@ -8,7 +7,6 @@ import { PlusIcon } from './icons/PlusIcon.tsx';
 import { TrashIcon } from './icons/TrashIcon.tsx';
 import { PencilIcon } from './icons/PencilIcon.tsx';
 import { CheckIcon } from './icons/CheckIcon.tsx';
-
 
 interface SettingsModalProps {
   isOpen: boolean;
@@ -99,16 +97,16 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, s
             <div className="bg-slate-800 rounded-lg shadow-xl w-full max-w-3xl m-4 border border-slate-700 transform transition-transform duration-300 scale-100 flex flex-col" onClick={e => e.stopPropagation()}>
                 <div className="p-4 flex justify-between items-center border-b border-slate-700">
                     <h2 className="text-lg font-semibold text-white">Settings</h2>
-                    <button onClick={onClose} className="text-slate-400 hover:text-white transition-colors">
+                    <button onClick={onClose} className="p-1 rounded-full text-slate-400 hover:text-white hover:bg-slate-700">
                         <XIcon className="w-6 h-6" />
                     </button>
                 </div>
                 
                 <div className="border-b border-slate-700">
                     <nav className="flex space-x-2 px-4">
-                        <button className={`px-1 py-2 text-sm font-semibold text-white border-b-2 border-blue-500`}>
+                        <div className={`px-1 py-2 text-sm font-semibold text-white border-b-2 border-blue-500`}>
                             Dunning Plans
-                        </button>
+                        </div>
                     </nav>
                 </div>
 
@@ -117,7 +115,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, s
                         <div className="flex justify-between items-center">
                             <h3 className="text-base font-semibold text-white">Manage your automated follow-up sequences.</h3>
                             {!isAddingPlan && (
-                                <button onClick={() => setIsAddingPlan(true)} className="flex items-center gap-1 bg-blue-600 hover:bg-blue-700 text-white font-semibold px-3 py-1.5 rounded-md text-xs transition-colors">
+                                <button onClick={() => setIsAddingPlan(true)} className="bg-blue-600 hover:bg-blue-700 text-white gap-1 text-xs h-auto py-1.5 px-3 rounded-md font-semibold flex items-center">
                                     <PlusIcon className="w-4 h-4" />
                                     New Plan
                                 </button>
@@ -130,10 +128,10 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, s
                                     value={newPlanName}
                                     onChange={(e) => setNewPlanName(e.target.value)}
                                     placeholder="New plan name..."
-                                    className="w-full bg-slate-900 border border-slate-600 rounded-lg px-3 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
+                                    className="flex h-10 w-full rounded-md border border-slate-600 bg-slate-900 px-3 py-2 text-sm"
                                 />
-                                <button onClick={handleAddNewPlan} className="bg-green-600 hover:bg-green-700 text-white font-semibold px-3 py-1 rounded-md text-xs">Add</button>
-                                <button onClick={() => setIsAddingPlan(false)} className="bg-slate-600 hover:bg-slate-500 text-white font-semibold px-3 py-1 rounded-md text-xs">Cancel</button>
+                                <button onClick={handleAddNewPlan} className="bg-green-600 hover:bg-green-700 text-white text-xs h-auto py-1.5 px-3 rounded-md font-semibold">Add</button>
+                                <button onClick={() => setIsAddingPlan(false)} className="bg-slate-600 hover:bg-slate-500 text-white text-xs h-auto py-1.5 px-3 rounded-md font-semibold">Cancel</button>
                             </div>
                         )}
                         <div className="space-y-3">
@@ -146,10 +144,10 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, s
                                                     type="text"
                                                     value={editingPlan.name}
                                                     onChange={(e) => setEditingPlan({...editingPlan, name: e.target.value})}
-                                                    className="w-full bg-slate-700 border border-slate-600 rounded-md px-2 py-0.5 text-sm"
+                                                    className="w-full bg-slate-700 border-slate-600 h-8 px-2 rounded-md"
                                                 />
-                                                 <button onClick={handleUpdatePlanName} className="text-green-400 hover:text-white"><CheckIcon className="w-4 h-4"/></button>
-                                                 <button onClick={() => setEditingPlan(null)} className="text-slate-400 hover:text-white"><XIcon className="w-4 h-4"/></button>
+                                                 <button onClick={handleUpdatePlanName} className="text-green-400 hover:text-white h-8 w-8 flex items-center justify-center rounded-md hover:bg-slate-700"><CheckIcon className="w-4 h-4"/></button>
+                                                 <button onClick={() => setEditingPlan(null)} className="text-slate-400 hover:text-white h-8 w-8 flex items-center justify-center rounded-md hover:bg-slate-700"><XIcon className="w-4 h-4"/></button>
                                             </div>
                                         ) : (
                                             <p className="font-semibold text-slate-200">{plan.name}</p>
@@ -157,8 +155,8 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, s
                                        
                                         {editingPlan?.id !== plan.id && (
                                             <div className="flex gap-2">
-                                                <button onClick={() => setEditingPlan({id: plan.id, name: plan.name})} className="text-slate-400 hover:text-white"><PencilIcon className="w-4 h-4"/></button>
-                                                <button onClick={() => handleDeletePlan(plan.id)} className="text-slate-400 hover:text-red-400"><TrashIcon className="w-4 h-4"/></button>
+                                                <button onClick={() => setEditingPlan({id: plan.id, name: plan.name})} className="text-slate-400 hover:text-white h-8 w-8 flex items-center justify-center rounded-md hover:bg-slate-700"><PencilIcon className="w-4 h-4"/></button>
+                                                <button onClick={() => handleDeletePlan(plan.id)} className="text-slate-400 hover:text-red-400 h-8 w-8 flex items-center justify-center rounded-md hover:bg-slate-700"><TrashIcon className="w-4 h-4"/></button>
                                             </div>
                                         )}
                                     </div>
@@ -170,20 +168,20 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, s
                                                     type="number"
                                                     value={step.day}
                                                     onChange={(e) => handleUpdateStep(plan.id, step.id, 'day', parseInt(e.target.value) || 0)}
-                                                    className="w-16 bg-slate-700 text-center rounded-md p-1"
+                                                    className="w-16 bg-slate-700 text-center rounded-md p-1 h-auto border-transparent focus:border-blue-500 focus:ring-0"
                                                 />
                                                 <span className="font-semibold text-slate-400">Template:</span>
                                                 <input 
                                                     type="text"
                                                     value={step.template}
                                                     onChange={(e) => handleUpdateStep(plan.id, step.id, 'template', e.target.value)}
-                                                    className="w-full bg-slate-700 rounded-md p-1"
+                                                    className="w-full bg-slate-700 rounded-md p-1 h-auto border-transparent focus:border-blue-500 focus:ring-0"
                                                 />
-                                                <button onClick={() => handleDeleteStep(plan.id, step.id)} className="text-slate-500 hover:text-red-400"><TrashIcon className="w-4 h-4"/></button>
+                                                <button onClick={() => handleDeleteStep(plan.id, step.id)} className="text-slate-500 hover:text-red-400 h-7 w-7 flex items-center justify-center rounded-md hover:bg-slate-700"><TrashIcon className="w-4 h-4"/></button>
                                             </div>
                                         ))}
                                     </div>
-                                    <button onClick={() => handleAddStep(plan.id)} className="mt-2 flex items-center gap-1 text-blue-400 hover:text-blue-300 text-xs font-semibold">
+                                    <button onClick={() => handleAddStep(plan.id)} className="mt-2 text-blue-400 hover:text-blue-300 text-xs font-semibold h-auto p-0 gap-1 flex items-center">
                                         <PlusIcon className="w-3 h-3"/> Add Step
                                     </button>
                                 </div>
@@ -193,10 +191,10 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, s
                 </div>
 
                 <div className="p-4 bg-slate-900/50 border-t border-slate-700 flex justify-end gap-2">
-                    <button onClick={onClose} className="bg-slate-700 hover:bg-slate-600 text-white font-semibold px-4 py-2 rounded-md text-sm transition-colors">
+                    <button onClick={onClose} className="bg-slate-700 hover:bg-slate-600 text-white font-semibold py-2 px-4 rounded-md text-sm">
                         Cancel
                     </button>
-                     <button onClick={handleSaveChanges} className="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-4 py-2 rounded-md text-sm transition-colors">
+                     <button onClick={handleSaveChanges} className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-md text-sm">
                         Save Changes
                     </button>
                 </div>

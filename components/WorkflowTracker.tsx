@@ -1,4 +1,3 @@
-
 import React, { useState, useRef, useEffect } from 'react';
 // Fix: Corrected import path for types.ts to be explicit.
 import type { Workflow, User } from '../types.ts';
@@ -102,7 +101,7 @@ export const WorkflowTracker: React.FC<WorkflowTrackerProps> = ({ workflows, cur
                 <input
                     type="text"
                     placeholder="Search by client name..."
-                    className="w-full bg-slate-900 border border-slate-600 rounded-lg pl-9 pr-3 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
+                    className="flex h-10 w-full rounded-md border border-slate-600 bg-slate-900 px-3 py-2 text-sm pl-9"
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
                 />
@@ -112,11 +111,7 @@ export const WorkflowTracker: React.FC<WorkflowTrackerProps> = ({ workflows, cur
                     <button
                         key={status}
                         onClick={() => setStatusFilter(status)}
-                        className={`px-2.5 py-1 text-xs font-semibold rounded-full transition-colors ${
-                            statusFilter === status
-                                ? 'bg-blue-600 text-white'
-                                : 'bg-slate-700 hover:bg-slate-600 text-slate-300'
-                        }`}
+                        className={`h-auto px-2.5 py-1 text-xs rounded-full font-semibold transition-colors ${statusFilter === status ? 'bg-blue-600 text-white' : 'bg-slate-700 hover:bg-slate-600 text-slate-300'}`}
                     >
                         {status === 'all' ? 'All' : status}
                     </button>
@@ -126,10 +121,10 @@ export const WorkflowTracker: React.FC<WorkflowTrackerProps> = ({ workflows, cur
       </div>
       <div className="border-b border-slate-700 flex-shrink-0">
         <nav className="flex space-x-2 px-4">
-            <button onClick={() => setActiveTab('my')} className={`px-1 py-2 text-sm font-semibold transition-colors ${activeTab === 'my' ? 'text-white border-b-2 border-blue-500' : 'text-slate-400 hover:text-white'}`}>
+            <button onClick={() => setActiveTab('my')} className={`px-1 py-2 text-sm h-auto rounded-none transition-colors border-b-2 ${activeTab === 'my' ? 'text-white border-blue-500' : 'text-slate-400 hover:text-white border-transparent'}`}>
                 My Queue ({myWorkflows.length})
             </button>
-             <button onClick={() => setActiveTab('all')} className={`px-1 py-2 text-sm font-semibold transition-colors ${activeTab === 'all' ? 'text-white border-b-2 border-blue-500' : 'text-slate-400 hover:text-white'}`}>
+             <button onClick={() => setActiveTab('all')} className={`px-1 py-2 text-sm h-auto rounded-none transition-colors border-b-2 ${activeTab === 'all' ? 'text-white border-blue-500' : 'text-slate-400 hover:text-white border-transparent'}`}>
                 All Active ({allWorkflows.length})
             </button>
         </nav>

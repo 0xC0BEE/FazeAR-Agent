@@ -1,5 +1,3 @@
-
-
 import React, { useState, useRef, useEffect } from 'react';
 // Fix: Corrected import path for types.ts to be explicit.
 import type { ChatMessage, Tone, Workflow } from '../types.ts';
@@ -22,6 +20,8 @@ interface ChatInterfaceProps {
 export const ChatInterface: React.FC<ChatInterfaceProps> = ({ messages, isLoading, onSendMessage, selectedWorkflow, onLogCommunication }) => {
   const [input, setInput] = useState('');
   const [tone, setTone] = useState<Tone>('Default');
+  const [isToneMenuOpen, setIsToneMenuOpen] = useState(false);
+  const toneMenuRef = useRef<HTMLDivElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const scrollToBottom = () => {
@@ -29,6 +29,19 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ messages, isLoadin
   };
 
   useEffect(scrollToBottom, [messages]);
+  
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (toneMenuRef.current && !toneMenuRef.current.contains(event.target as Node)) {
+        setIsToneMenuOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [toneMenuRef]);
+
 
   const handleSend = () => {
     if (input.trim()) {
@@ -87,7 +100,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ messages, isLoadin
                     <button 
                         disabled={!selectedWorkflow}
                         onClick={() => handleLog(msg.content ?? '')}
-                        className="flex items-center gap-1 text-xs text-slate-400 hover:text-white disabled:text-slate-600 disabled:cursor-not-allowed transition-colors"
+                        className="flex items-center gap-1 text-xs text-slate-400 hover:text-white disabled:text-slate-600 disabled:cursor-not-allowed transition-colors h-auto p-0"
                     >
                         <MailIcon className="w-3 h-3"/> Log Communication
                     </button>
@@ -105,36 +118,46 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ messages, isLoadin
       </div>
       <div className="p-4 border-t border-slate-700 flex-shrink-0">
         <div className="flex items-center gap-2">
-           <div className="relative group">
-                <button className="flex items-center gap-1.5 bg-slate-700 hover:bg-slate-600 text-slate-300 font-semibold px-3 py-1.5 rounded-md text-xs transition-colors">
-                    <span>Tone: {tone}</span>
-                    <ChevronDownIcon className="w-3 h-3"/>
-                </button>
-                <div className="absolute bottom-full mb-2 w-32 bg-slate-800 border border-slate-700 rounded-lg shadow-lg p-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none group-hover:pointer-events-auto">
-                    {tones.map(t => (
-                         <button 
-                            key={t}
-                            onClick={() => setTone(t)}
-                            className={`w-full text-left px-2 py-1 text-xs rounded ${tone === t ? 'bg-blue-600 text-white' : 'hover:bg-slate-700'}`}
-                         >
-                            {t}
-                         </button>
-                    ))}
+          <div className="relative" ref={toneMenuRef}>
+            <button
+              onClick={() => setIsToneMenuOpen(prev => !prev)}
+              className="inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 disabled:pointer-events-none disabled:opacity-50 bg-slate-800 text-slate-300 hover:bg-slate-700 h-9 px-3 gap-1.5 text-xs"
+            >
+              <span>Tone: {tone}</span>
+              <ChevronDownIcon className="w-3 h-3"/>
+            </button>
+            {isToneMenuOpen && (
+              <div className="absolute bottom-full mb-2 w-32 rounded-md shadow-lg bg-slate-800 ring-1 ring-black ring-opacity-5 z-10 border border-slate-700">
+                <div className="py-1">
+                  {tones.map(t => (
+                    <a
+                      href="#"
+                      key={t}
+                      onClick={(e) => {
+                        e.preventDefault();
+                        setTone(t);
+                        setIsToneMenuOpen(false);
+                      }}
+                      className="block px-4 py-2 text-sm text-slate-300 hover:bg-slate-700 hover:text-white"
+                    >{t}</a>
+                  ))}
                 </div>
-           </div>
+              </div>
+            )}
+          </div>
           <input
             type="text"
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && !isLoading && handleSend()}
             placeholder="Ask a question or give a command..."
-            className="w-full bg-slate-900 border border-slate-600 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
+            className="flex h-10 w-full rounded-md border border-slate-600 bg-slate-900 px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-slate-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 disabled:cursor-not-allowed disabled:opacity-50"
             disabled={isLoading}
           />
           <button
             onClick={handleSend}
             disabled={isLoading || !input.trim()}
-            className="bg-blue-600 text-white p-2 rounded-lg transition-colors hover:bg-blue-700 disabled:bg-slate-600"
+            className="inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 disabled:pointer-events-none disabled:opacity-50 bg-blue-600 text-white hover:bg-blue-700 disabled:bg-slate-600 flex-shrink-0 h-10 w-10"
           >
             {isLoading ? <SpinnerIcon className="w-5 h-5 animate-spin"/> : <PaperAirplaneIcon className="w-5 h-5" />}
           </button>

@@ -45,16 +45,16 @@ This document outlines the phased development plan for the FazeAR project.
 
 ---
 
-## Phase 4: Integrations & Collaboration (Up Next)
+## Phase 4: Integrations & Collaboration (In Progress)
 
 - [ ] **Goal:** Connect FazeAR to the wider financial ecosystem and enhance client collaboration.
 - [ ] **Features:**
   - [ ] **Real API Integrations:**
-    - [ ] Connect to QuickBooks Online API to sync invoices and customers in real-time.
-    - [ ] Connect to Stripe API for real payment processing within the Client Portal.
+    - [x] Connect to QuickBooks Online API to sync invoices and customers in real-time. *(Implemented via Webhook Simulator)*
+    - [x] Connect to Stripe API for real payment processing within the Client Portal. *(Implemented via Webhook Simulator)*
   - [ ] **Enhanced Client Portal:**
     - [ ] Allow clients to log in and not only pay but also view their entire invoice history.
-    - [ ] Enable clients to initiate a dispute directly from the portal, providing a reason and documentation.
+    - [x] Enable clients to initiate a dispute directly from the portal, providing a reason and documentation.
   - [ ] **Email Integration (Gmail API):**
     - [ ] Allow the agent to send drafted communications directly from the user's connected email account.
     - [ ] Automatically scan the connected inbox for incoming emails that look like remittance advice and flag them for the Cash Application tool.

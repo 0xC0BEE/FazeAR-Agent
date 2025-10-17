@@ -1,15 +1,16 @@
-
 import React, { useState } from 'react';
-// Fix: Corrected import path for types.ts to be explicit.
 import type { User, Workflow } from '../types.ts';
 import { CreditCardIcon } from './icons/CreditCardIcon.tsx';
 import { SpinnerIcon } from './icons/SpinnerIcon.tsx';
 import { CheckCircleIcon } from './icons/CheckCircleIcon.tsx';
 import { XIcon } from './icons/XIcon.tsx';
+import { ClientDisputeModal } from './ClientDisputeModal.tsx';
+
 
 interface PaymentPortalProps {
     user: User;
     workflows: Workflow[];
+    onDispute: (workflowId: string, reason: string, clientName: string) => void;
 }
 
 const PaymentModal: React.FC<{ invoice: Workflow, onClose: () => void, onSuccess: () => void }> = ({ invoice, onClose, onSuccess }) => {
@@ -29,7 +30,7 @@ const PaymentModal: React.FC<{ invoice: Workflow, onClose: () => void, onSuccess
             <div className="bg-slate-800 rounded-lg shadow-xl w-full max-w-md m-4 border border-slate-700" onClick={e => e.stopPropagation()}>
                 <div className="p-4 flex justify-between items-center border-b border-slate-700">
                     <h2 className="text-lg font-semibold text-white">Pay Invoice {invoice.externalId}</h2>
-                    <button onClick={onClose} className="text-slate-400 hover:text-white transition-colors"><XIcon className="w-6 h-6" /></button>
+                    <button onClick={onClose} className="text-slate-400 hover:text-white transition-colors p-1 rounded-full"><XIcon className="w-6 h-6" /></button>
                 </div>
                 <form onSubmit={handleSubmit}>
                     <div className="p-6 space-y-4">
@@ -45,7 +46,7 @@ const PaymentModal: React.FC<{ invoice: Workflow, onClose: () => void, onSuccess
                          <button
                             type="submit"
                             disabled={isLoading}
-                            className="w-full bg-blue-600 text-white font-semibold px-4 py-2 rounded-lg text-sm transition-colors hover:bg-blue-700 disabled:bg-slate-600 flex items-center justify-center gap-2"
+                            className="w-full bg-blue-600 text-white hover:bg-blue-700 disabled:bg-slate-600 flex items-center justify-center gap-2 font-semibold py-2 px-4 rounded-md transition-colors"
                         >
                             {isLoading ? <SpinnerIcon className="w-5 h-5 animate-spin" /> : <CreditCardIcon className="w-5 h-5" />}
                             Confirm Payment of ${invoice.amount.toLocaleString()}
@@ -58,9 +59,11 @@ const PaymentModal: React.FC<{ invoice: Workflow, onClose: () => void, onSuccess
 };
 
 
-export const PaymentPortal: React.FC<PaymentPortalProps> = ({ user, workflows }) => {
+export const PaymentPortal: React.FC<PaymentPortalProps> = ({ user, workflows, onDispute }) => {
     const [paymentSuccess, setPaymentSuccess] = useState(false);
+    const [disputeSuccess, setDisputeSuccess] = useState(false);
     const [payingInvoice, setPayingInvoice] = useState<Workflow | null>(null);
+    const [disputingInvoice, setDisputingInvoice] = useState<Workflow | null>(null);
 
     const openInvoices = workflows.filter(w => w.status !== 'Completed');
     const closedInvoices = workflows.filter(w => w.status === 'Completed');
@@ -71,9 +74,19 @@ export const PaymentPortal: React.FC<PaymentPortalProps> = ({ user, workflows })
         setPaymentSuccess(true);
         setTimeout(() => setPaymentSuccess(false), 4000); // Reset after a few seconds
     }
+
+    const handleDisputeSubmit = (workflowId: string, reason: string) => {
+        if (user.clientName) {
+            onDispute(workflowId, reason, user.clientName);
+            setDisputingInvoice(null);
+            setDisputeSuccess(true);
+            setTimeout(() => setDisputeSuccess(false), 4000);
+        }
+    };
     
     const getStatusChip = (status: Workflow['status']) => {
         if (status === 'Completed') return <span className="px-2 py-0.5 text-xs font-semibold rounded-full bg-green-200 text-green-800">Paid</span>;
+        if (status === 'Disputed') return <span className="px-2 py-0.5 text-xs font-semibold rounded-full bg-amber-200 text-amber-800">Disputed</span>;
         if (status === 'Overdue') return <span className="px-2 py-0.5 text-xs font-semibold rounded-full bg-red-200 text-red-800">Overdue</span>;
         return <span className="px-2 py-0.5 text-xs font-semibold rounded-full bg-blue-200 text-blue-800">In Progress</span>;
     }
@@ -89,6 +102,13 @@ export const PaymentPortal: React.FC<PaymentPortalProps> = ({ user, workflows })
                 <div className="bg-green-900/50 border border-green-700 text-green-200 p-4 rounded-lg mb-6 flex items-center gap-3">
                     <CheckCircleIcon className="w-6 h-6"/>
                     <p className="font-semibold">Payment successful! Your records will be updated shortly.</p>
+                </div>
+            )}
+
+            {disputeSuccess && (
+                <div className="bg-amber-900/50 border border-amber-700 text-amber-200 p-4 rounded-lg mb-6 flex items-center gap-3">
+                    <CheckCircleIcon className="w-6 h-6"/>
+                    <p className="font-semibold">Dispute submitted successfully. Our team will review it shortly.</p>
                 </div>
             )}
 
@@ -116,12 +136,24 @@ export const PaymentPortal: React.FC<PaymentPortalProps> = ({ user, workflows })
                                     <td className="px-6 py-4 text-right font-mono">${invoice.amount.toLocaleString()}</td>
                                     <td className="px-6 py-4 text-center">{getStatusChip(invoice.status)}</td>
                                     <td className="px-6 py-4 text-right">
-                                        <button 
-                                            onClick={() => setPayingInvoice(invoice)}
-                                            className="bg-blue-600 hover:bg-blue-700 text-white font-semibold text-xs px-3 py-1 rounded-md transition-colors"
-                                        >
-                                            Pay
-                                        </button>
+                                        {invoice.status !== 'Disputed' ? (
+                                            <div className="flex gap-2 justify-end">
+                                                <button 
+                                                    onClick={() => setDisputingInvoice(invoice)}
+                                                    className="bg-amber-600/50 hover:bg-amber-600/80 text-white font-semibold text-xs h-auto px-3 py-1 rounded-md"
+                                                >
+                                                    Dispute
+                                                </button>
+                                                <button 
+                                                    onClick={() => setPayingInvoice(invoice)}
+                                                    className="bg-blue-600 hover:bg-blue-700 text-white font-semibold text-xs h-auto px-3 py-1 rounded-md"
+                                                >
+                                                    Pay
+                                                </button>
+                                            </div>
+                                        ) : (
+                                            <span className="text-xs italic text-slate-500">Under Review</span>
+                                        )}
                                     </td>
                                 </tr>
                             ))}
@@ -179,6 +211,13 @@ export const PaymentPortal: React.FC<PaymentPortalProps> = ({ user, workflows })
                     invoice={payingInvoice}
                     onClose={() => setPayingInvoice(null)}
                     onSuccess={handlePaymentSuccess}
+                />
+            )}
+             {disputingInvoice && (
+                <ClientDisputeModal
+                    invoice={disputingInvoice}
+                    onClose={() => setDisputingInvoice(null)}
+                    onSubmit={handleDisputeSubmit}
                 />
             )}
         </div>

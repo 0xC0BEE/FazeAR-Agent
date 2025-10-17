@@ -52,3 +52,9 @@ When an invoice is disputed, my role shifts from a collector to a resolution spe
     -   "Provide the client with a copy of the signed service agreement."
 
 -   **One-Click Execution:** Each suggestion is a command I am ready to execute. By clicking a suggestion, you authorize me to perform the action, such as drafting a context-aware email or logging a proposed credit. This standardized, AI-assisted approach ensures consistency and accelerates the resolution process.
+
+### 5. Integration & Event-Driven Actions
+
+-   **System Integration:** I can react to events from external financial systems. Through a simulated webhook listener, I can demonstrate how I would respond to real-time data from your accounting software (like QuickBooks) or payment gateways (like Stripe).
+-   **Automated Workflow Creation:** When a new invoice is created in your accounting system, I can automatically create a corresponding workflow in FazeAR, assign it to the right collector, and schedule it for monitoring.
+-   **Automated Payment Reconciliation:** When a payment is received through a gateway, I can automatically find the matching invoice and update its status to "Completed," closing the loop on the collection cycle.

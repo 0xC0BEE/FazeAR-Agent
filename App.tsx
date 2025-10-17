@@ -70,7 +70,8 @@ const App: React.FC = () => {
 
     // Autonomous agent simulation
     useEffect(() => {
-        let interval: NodeJS.Timeout | undefined;
+        // Fix: Changed NodeJS.Timeout to number, which is the correct type for setInterval in a browser environment.
+        let interval: number | undefined;
         if (isGlobalAutonomous) {
             interval = setInterval(() => {
                 const autonomousWorkflows = workflows.filter(w => w.isAutonomous || isGlobalAutonomous);
@@ -313,6 +314,22 @@ const App: React.FC = () => {
         } : w));
         addNotification('info', 'Invoice has been moved to the Disputes Hub.');
     };
+
+    const handleClientDispute = (workflowId: string, reason: string, clientName: string) => {
+        const newAuditEntry = {
+            timestamp: new Date().toISOString(),
+            activity: 'Dispute Initiated by Client',
+            details: `Submitted via Client Portal. Reason: ${reason}`,
+        };
+        setWorkflows(prev => prev.map(w => w.id === workflowId ? {
+            ...w,
+            status: 'Disputed',
+            disputeStatus: 'New',
+            disputeReason: reason,
+            auditTrail: [...w.auditTrail, newAuditEntry]
+        } : w));
+        addNotification('info', `New dispute submitted by ${clientName} for invoice. See Disputes Hub.`);
+    };
     
     const handleUpdateDisputeStatus = (workflowId: string, newStatus: DisputeStatus) => {
         const newAuditEntry = {
@@ -345,6 +362,46 @@ const App: React.FC = () => {
         setApiKey(key);
     };
 
+    const handleSimulatedEvent = (type: string, data: any) => {
+        const eventTitle = type.split('_').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+        addNotification('info', `Simulated Event: ${eventTitle}`);
+        
+        switch (type) {
+            case 'new_invoice':
+                const newWorkflow: Workflow = {
+                    id: uuidv4(),
+                    clientName: data.clientName,
+                    amount: data.amount,
+                    dueDate: data.dueDate,
+                    externalId: data.externalId,
+                    status: 'In Progress',
+                    assignee: 'Unassigned',
+                    isAutonomous: false,
+                    auditTrail: [{ timestamp: new Date().toISOString(), activity: 'Invoice Created', details: 'Simulated from QuickBooks integration.' }],
+                    communications: [],
+                    dunningPlanId: 'plan_standard_v1',
+                    disputeStatus: null,
+                    disputeReason: null,
+                    createdDate: new Date().toISOString().split('T')[0],
+                    paymentDate: null,
+                    items: [{ description: 'Simulated Service Item', quantity: 1, price: data.amount }]
+                };
+                setWorkflows(prev => [newWorkflow, ...prev]);
+                break;
+            case 'payment_received':
+                 const newAuditEntry = {
+                    timestamp: new Date().toISOString(),
+                    activity: 'Payment Received',
+                    details: 'Simulated from Stripe integration.',
+                };
+                setWorkflows(prev => prev.map(w => w.id === data.id ? { ...w, status: 'Completed', paymentDate: new Date().toISOString(), auditTrail: [...w.auditTrail, newAuditEntry] } : w));
+                break;
+            case 'remittance_advice':
+                addNotification('agent', `Agent detected new remittance advice. Go to the 'Cash App' panel on the dashboard to process it.`);
+                break;
+        }
+    };
+
     if (!apiKey) {
         return <ApiKeyModal onSave={handleSaveApiKey} />;
     }
@@ -352,7 +409,7 @@ const App: React.FC = () => {
     const clientWorkflows = currentUser.role === 'Client' ? workflows.filter(w => w.clientName === currentUser.clientName) : [];
 
     const currentView = () => {
-        if (currentUser.role === 'Client') return <PaymentPortal user={currentUser} workflows={clientWorkflows} />;
+        if (currentUser.role === 'Client') return <PaymentPortal user={currentUser} workflows={clientWorkflows} onDispute={handleClientDispute} />;
         
         switch (view) {
             case 'dashboard':
@@ -379,7 +436,12 @@ const App: React.FC = () => {
                     onClearScenario={() => setScenarioWorkflows(null)}
                 />;
             case 'integrations':
-                return <IntegrationsHub settings={settings} onUpdateSettings={handleUpdateSettings} />;
+                return <IntegrationsHub 
+                    settings={settings} 
+                    onUpdateSettings={handleUpdateSettings}
+                    workflows={workflows}
+                    onSimulateEvent={handleSimulatedEvent}
+                />;
             case 'knowledge':
                 return <KnowledgeBase />;
             case 'disputes':
