@@ -1,4 +1,5 @@
-import { GoogleGenAI, FunctionDeclaration, Type, GenerateContentResponse } from '@google/genai';
+// Fix: Removed non-exported member `LiveSession`. The return type of startLiveConversation is now inferred.
+import { GoogleGenAI, FunctionDeclaration, Type, GenerateContentResponse, Modality, Blob } from '@google/genai';
 import type { ChatMessage, Workflow, Tone, Match, Settings, User } from '../types.ts';
 
 let ai: GoogleGenAI | null = null;
@@ -246,3 +247,56 @@ export const generateWhatIfScenario = async (prompt: string, originalWorkflows: 
         return originalWorkflows;
     }
 };
+
+export const startLiveConversation = async (
+    workflow: Workflow,
+    callbacks: {
+        onMessage: (message: any) => void,
+        onError: (error: any) => void,
+        onClose: () => void,
+    }
+) => {
+    if (!ai) throw new Error("AI service not initialized. Please provide an API key.");
+    
+    const systemInstruction = `You are an accounts payable representative for ${workflow.clientName}. Your name is Alex. You are discussing invoice #${workflow.externalId} for $${workflow.amount}, which was due on ${workflow.dueDate}. Be professional and courteous, but you can be firm about payment schedules if pressed. You are aware of the invoice details but may need to ask for clarification. Do not break character.`;
+
+    const session = await ai.live.connect({
+        model: 'gemini-2.5-flash-native-audio-preview-09-2025',
+        callbacks: {
+            onopen: () => {},
+            onmessage: callbacks.onMessage,
+            onerror: callbacks.onError,
+            onclose: callbacks.onClose,
+        },
+        config: {
+            responseModalities: [Modality.AUDIO],
+            speechConfig: {
+                voiceConfig: { prebuiltVoiceConfig: { voiceName: 'Zephyr' } },
+            },
+            systemInstruction,
+            inputAudioTranscription: {},
+            outputAudioTranscription: {},
+        },
+    });
+    
+    return session;
+}
+
+export const summarizeConversation = async (transcript: string): Promise<string> => {
+    if (!ai) throw new Error("AI service not initialized. Please provide an API key.");
+    
+    const prompt = `Please summarize the following conversation transcript from an accounts receivable call. Extract key outcomes such as promises to pay (including dates and amounts), any disputes raised, or required follow-up actions. The summary should be concise and formatted for an internal note.
+
+    Transcript:
+    ---
+    ${transcript}
+    ---
+    `;
+
+    const response = await ai.models.generateContent({
+        model: 'gemini-2.5-flash',
+        contents: prompt,
+    });
+
+    return response.text;
+}

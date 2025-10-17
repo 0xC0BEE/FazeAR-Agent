@@ -14,6 +14,7 @@ import { KnowledgeBase } from './components/KnowledgeBase.tsx';
 import { DisputesHub } from './components/DisputesHub.tsx';
 import { InvoiceModal } from './components/InvoiceModal.tsx';
 import { ApiKeyModal } from './components/ApiKeyModal.tsx';
+import { LiveCallModal } from './components/LiveCallModal.tsx';
 
 
 type View = 'dashboard' | 'analytics' | 'integrations' | 'portal' | 'knowledge' | 'disputes';
@@ -37,6 +38,7 @@ const App: React.FC = () => {
     
     const [scenarioWorkflows, setScenarioWorkflows] = useState<Workflow[] | null>(null);
     const [viewingInvoice, setViewingInvoice] = useState<Workflow | null>(null);
+    const [callingWorkflow, setCallingWorkflow] = useState<Workflow | null>(null);
 
     useEffect(() => {
         const storedKey = sessionStorage.getItem('gemini-api-key');
@@ -341,6 +343,7 @@ const App: React.FC = () => {
                     onUpdateWorkflow={setWorkflows}
                     onAddNotification={addNotification}
                     onViewInvoice={(workflow) => setViewingInvoice(workflow)}
+                    onInitiateCall={(workflow) => setCallingWorkflow(workflow)}
                 />
             case 'analytics':
                 return <Analytics 
@@ -372,6 +375,7 @@ const App: React.FC = () => {
                      onUpdateWorkflow={setWorkflows}
                      onAddNotification={addNotification}
                      onViewInvoice={(workflow) => setViewingInvoice(workflow)}
+                     onInitiateCall={(workflow) => setCallingWorkflow(workflow)}
                  />;
         }
     }
@@ -409,6 +413,22 @@ const App: React.FC = () => {
                 isOpen={!!viewingInvoice}
                 onClose={() => setViewingInvoice(null)}
                 workflow={viewingInvoice}
+            />
+            <LiveCallModal
+                isOpen={!!callingWorkflow}
+                onClose={() => setCallingWorkflow(null)}
+                workflow={callingWorkflow}
+                onAddNote={(note) => {
+                    if (callingWorkflow) {
+                         const newAuditEntry = {
+                            timestamp: new Date().toISOString(),
+                            activity: `Note Added by ${currentUser.name}`,
+                            details: `AI Call Summary:\n\n${note}`,
+                        };
+                        setWorkflows(prev => prev.map(w => w.id === callingWorkflow.id ? {...w, auditTrail: [...w.auditTrail, newAuditEntry]} : w));
+                        addNotification('success', 'Call summary added to notes.');
+                    }
+                }}
             />
         </div>
     );

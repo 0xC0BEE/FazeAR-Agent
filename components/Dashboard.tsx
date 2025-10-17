@@ -17,6 +17,7 @@ interface DashboardProps {
     onUpdateWorkflow: React.Dispatch<React.SetStateAction<Workflow[]>>;
     onAddNotification: (type: 'agent' | 'success' | 'error' | 'info', message: string) => void;
     onViewInvoice: (workflow: Workflow) => void;
+    onInitiateCall: (workflow: Workflow) => void;
 }
 
 export const Dashboard: React.FC<DashboardProps> = ({ 
@@ -31,7 +32,8 @@ export const Dashboard: React.FC<DashboardProps> = ({
     onDisputeWorkflow,
     onUpdateWorkflow,
     onAddNotification,
-    onViewInvoice
+    onViewInvoice,
+    onInitiateCall
 }) => {
     const [selectedWorkflowId, setSelectedWorkflowId] = useState<string | null>(null);
 
@@ -73,6 +75,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
                     onUpdateWorkflow={onUpdateWorkflow}
                     onAddNotification={onAddNotification}
                     onViewInvoice={onViewInvoice}
+                    onInitiateCall={onInitiateCall}
                 />
             </div>
         </div>

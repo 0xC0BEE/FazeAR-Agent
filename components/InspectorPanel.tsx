@@ -10,6 +10,7 @@ import { CashAppConfirmationModal } from './CashAppConfirmationModal.tsx';
 import { ExclamationIcon } from './icons/ExclamationIcon.tsx';
 import { AuditTrailModal } from './AuditTrailModal.tsx';
 import { DocumentIcon } from './icons/DocumentIcon.tsx';
+import { PhoneIcon } from './icons/PhoneIcon.tsx';
 
 type ActionTab = 'actions' | 'cash-app' | 'comms';
 
@@ -22,6 +23,7 @@ interface InspectorPanelProps {
   onUpdateWorkflow: React.Dispatch<React.SetStateAction<Workflow[]>>;
   onAddNotification: (type: 'agent' | 'success' | 'error' | 'info', message: string) => void;
   onViewInvoice: (workflow: Workflow) => void;
+  onInitiateCall: (workflow: Workflow) => void;
 }
 
 export const InspectorPanel: React.FC<InspectorPanelProps> = ({ 
@@ -31,7 +33,8 @@ export const InspectorPanel: React.FC<InspectorPanelProps> = ({
     onDisputeWorkflow, 
     onUpdateWorkflow, 
     onAddNotification,
-    onViewInvoice
+    onViewInvoice,
+    onInitiateCall
 }) => {
   const [actionTab, setActionTab] = useState<ActionTab>('actions');
   const [isAuditModalOpen, setAuditModalOpen] = useState(false);
@@ -150,6 +153,9 @@ export const InspectorPanel: React.FC<InspectorPanelProps> = ({
                 <div className="space-y-2 pt-2 border-t border-slate-700/50">
                     <button onClick={() => onViewInvoice(workflow)} className="w-full flex items-center gap-2 bg-slate-700 hover:bg-slate-600 text-slate-300 font-semibold p-2 rounded-lg text-sm transition-colors">
                         <DocumentIcon className="w-5 h-5"/> View Invoice
+                    </button>
+                    <button onClick={() => onInitiateCall(workflow)} className="w-full flex items-center gap-2 bg-green-600/20 border border-green-500/50 text-green-300 hover:bg-green-600/40 font-semibold p-2 rounded-lg text-sm transition-colors">
+                        <PhoneIcon className="w-5 h-5"/> AI Live Call
                     </button>
                     <div className="flex items-center gap-2 bg-slate-800 border border-slate-700 rounded-lg pl-3 pr-1 py-1 text-sm">
                         <div className="flex items-center gap-1.5 flex-grow">
