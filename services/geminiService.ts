@@ -1,6 +1,6 @@
 // Fix: Removed non-exported member `LiveSession`. The return type of startLiveConversation is now inferred.
 import { GoogleGenAI, FunctionDeclaration, Type, GenerateContentResponse, Modality, Blob } from '@google/genai';
-import type { ChatMessage, Workflow, Tone, Match, Settings, User } from '../types.ts';
+import type { ChatMessage, Workflow, Tone, Match, Settings, User, ResolutionSuggestion } from '../types.ts';
 
 let ai: GoogleGenAI | null = null;
 
@@ -299,4 +299,58 @@ export const summarizeConversation = async (transcript: string): Promise<string>
     });
 
     return response.text;
-}
+};
+
+export const getDisputeResolutionSuggestions = async (workflow: Workflow): Promise<ResolutionSuggestion> => {
+    if (!ai) throw new Error("AI service not initialized. Please provide an API key.");
+    
+    const prompt = `
+        You are an AI assistant for an Accounts Receivable specialist. Analyze the following disputed invoice and provide a concise summary and 3 actionable suggestions for resolution.
+
+        Disputed Workflow Details:
+        - Client: ${workflow.clientName}
+        - Invoice ID: ${workflow.externalId}
+        - Amount: $${workflow.amount}
+        - Due Date: ${workflow.dueDate}
+        - Initial Dispute Reason: "${workflow.disputeReason}"
+        - Communication History: ${JSON.stringify(workflow.communications)}
+        - Audit Trail: ${JSON.stringify(workflow.auditTrail.slice(-3))}
+
+        Based on this information, provide a brief summary of the situation. Then, provide exactly three distinct, actionable suggestions a collector could take. For each suggestion, provide a 'title' (a short summary of the action) and a 'prompt' (a detailed instruction for an AI to execute, like drafting a specific email).
+    `;
+
+    try {
+        const response = await ai.models.generateContent({
+            model: 'gemini-2.5-pro',
+            contents: prompt,
+            config: {
+                responseMimeType: "application/json",
+                responseSchema: {
+                    type: Type.OBJECT,
+                    properties: {
+                        summary: { type: Type.STRING },
+                        suggestions: {
+                            type: Type.ARRAY,
+                            items: {
+                                type: Type.OBJECT,
+                                properties: {
+                                    title: { type: Type.STRING },
+                                    prompt: { type: Type.STRING }
+                                },
+                                required: ["title", "prompt"]
+                            }
+                        }
+                    },
+                    required: ["summary", "suggestions"]
+                }
+            }
+        });
+        
+        const jsonText = response.text.trim();
+        return JSON.parse(jsonText) as ResolutionSuggestion;
+
+    } catch (error) {
+        console.error("Failed to get dispute suggestions:", error);
+        return { summary: "Could not analyze the dispute. Please review manually.", suggestions: [] };
+    }
+};

@@ -15,6 +15,7 @@ import { DisputesHub } from './components/DisputesHub.tsx';
 import { InvoiceModal } from './components/InvoiceModal.tsx';
 import { ApiKeyModal } from './components/ApiKeyModal.tsx';
 import { LiveCallModal } from './components/LiveCallModal.tsx';
+import { DisputeDetailModal } from './components/DisputeDetailModal.tsx';
 
 
 type View = 'dashboard' | 'analytics' | 'integrations' | 'portal' | 'knowledge' | 'disputes';
@@ -39,6 +40,7 @@ const App: React.FC = () => {
     const [scenarioWorkflows, setScenarioWorkflows] = useState<Workflow[] | null>(null);
     const [viewingInvoice, setViewingInvoice] = useState<Workflow | null>(null);
     const [callingWorkflow, setCallingWorkflow] = useState<Workflow | null>(null);
+    const [viewingDispute, setViewingDispute] = useState<Workflow | null>(null);
 
     useEffect(() => {
         const storedKey = sessionStorage.getItem('gemini-api-key');
@@ -314,6 +316,17 @@ const App: React.FC = () => {
         addNotification('info', `Dispute status updated to "${newStatus}".`);
     };
 
+    const handleDisputeAction = async (workflow: Workflow, actionPrompt: string, actionTitle: string) => {
+        addNotification('agent', `Agent is handling: "${actionTitle}"`);
+        const response = await generateChatResponse(actionPrompt, 'Default', workflows);
+        if (response.text) {
+            handleLogCommunication(response.text, workflow);
+            setViewingDispute(null); // Close modal on action
+        } else {
+            addNotification('error', 'AI could not complete the action.');
+        }
+    };
+
     const handleSaveApiKey = (key: string) => {
         sessionStorage.setItem('gemini-api-key', key);
         setApiKey(key);
@@ -358,8 +371,9 @@ const App: React.FC = () => {
                 return <KnowledgeBase />;
             case 'disputes':
                  return <DisputesHub 
-                    disputedWorkflows={workflows.filter(w => w.disputeStatus)}
+                    disputedWorkflows={workflows.filter(w => w.status === 'Disputed')}
                     onUpdateDisputeStatus={handleUpdateDisputeStatus}
+                    onOpenDispute={(workflow) => setViewingDispute(workflow)}
                  />;
             default:
                 return <Dashboard
@@ -429,6 +443,12 @@ const App: React.FC = () => {
                         addNotification('success', 'Call summary added to notes.');
                     }
                 }}
+            />
+            <DisputeDetailModal
+                isOpen={!!viewingDispute}
+                onClose={() => setViewingDispute(null)}
+                workflow={viewingDispute}
+                onExecuteAction={handleDisputeAction}
             />
         </div>
     );

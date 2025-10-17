@@ -86,10 +86,16 @@ const TopicContent: React.FC<{ topicId: string }> = ({ topicId }) => {
             );
         case 'disputes':
              return (
-                <Section title="Dispute Management Hub">
-                    <p>The **Disputes Hub** provides a structured, visual way to manage disputed invoices, which are a common cause of payment delays.</p>
-                    <p>It features a **Kanban-style board** with columns for each stage of the dispute process: "New," "Under Review," "Resolution Proposed," and "Resolved."</p>
-                    <p>You can initiate a dispute from the Inspector Panel or by telling the agent. The disputed workflow will appear on the board, where you can drag and drop it between stages as you work towards a resolution.</p>
+                <Section title="AI-Powered Dispute Resolution">
+                    <p>The **Disputes Hub** is now an AI-powered resolution center. While the Kanban board is still available for a high-level visual overview, the real power is unlocked when you engage with a specific dispute.</p>
+                    <p>Instead of just tracking, FazeAR now helps you actively resolve disputes. Clicking on a dispute card opens the **Dispute Resolution Assistant**.</p>
+                    <p><strong>Key Features:</strong></p>
+                    <ul>
+                        <li><strong>AI Case Summary:</strong> Upon opening the modal, the agent instantly analyzes the invoice details, dispute reason, and communication history to provide you with a concise summary of the entire case. No more digging through notes.</li>
+                        <li><strong>Suggested Actions:</strong> Below the summary, the agent proposes several actionable next steps, such as "Offer a partial credit" or "Draft an email requesting more information." These aren't just ideas; they are one-click actions.</li>
+                    </ul>
+                    <p><strong>Example:</strong> A client disputes an invoice for "Goods not received." You open the dispute, and the AI summarizes the case. One of the suggestions is "Draft an email requesting Proof of Delivery." Clicking this button commands the AI to generate a pre-written, context-aware email, which is then added to the Communications Log for you to review and send.</p>
+                    <p>This transforms the hub from a passive tracker into an intelligent assistant, ensuring faster, more consistent dispute resolution.</p>
                 </Section>
             );
         case 'settings':

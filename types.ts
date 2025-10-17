@@ -11,7 +11,7 @@ export interface User {
 }
 
 export interface ChatMessage {
-  id: string;
+  id:string;
   role: 'user' | 'model' | 'system';
   content: string | null;
   isThinking?: boolean;
@@ -100,4 +100,12 @@ export interface Match {
   amountPaid: number;
   workflowId: string | null;
   status: 'matched' | 'partial' | 'unmatched';
+}
+
+export interface ResolutionSuggestion {
+    summary: string;
+    suggestions: {
+        title: string;
+        prompt: string;
+    }[];
 }

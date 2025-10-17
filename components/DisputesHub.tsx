@@ -1,4 +1,3 @@
-
 import React from 'react';
 // Fix: Corrected import path for types.ts to be explicit.
 import type { Workflow, DisputeStatus } from '../types.ts';
@@ -10,6 +9,7 @@ import { CalendarIcon } from './icons/CalendarIcon.tsx';
 interface DisputesHubProps {
   disputedWorkflows: Workflow[];
   onUpdateDisputeStatus: (workflowId: string, newStatus: DisputeStatus) => void;
+  onOpenDispute: (workflow: Workflow) => void;
 }
 
 const DisputeCard: React.FC<{ workflow: Workflow }> = ({ workflow }) => {
@@ -31,9 +31,10 @@ interface DisputeColumnProps {
     status: DisputeStatus;
     workflows: Workflow[];
     onDrop: (status: DisputeStatus, workflowId: string) => void;
+    onOpenDispute: (workflow: Workflow) => void;
 }
 
-const DisputeColumn: React.FC<DisputeColumnProps> = ({ status, workflows, onDrop }) => {
+const DisputeColumn: React.FC<DisputeColumnProps> = ({ status, workflows, onDrop, onOpenDispute }) => {
     const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
         e.preventDefault();
         e.currentTarget.classList.add('bg-slate-700/50');
@@ -64,7 +65,13 @@ const DisputeColumn: React.FC<DisputeColumnProps> = ({ status, workflows, onDrop
             <h3 className="font-semibold text-slate-300 text-sm mb-3 px-1">{status} ({workflows.length})</h3>
             <div className="space-y-2 h-full">
                 {workflows.map(wf => (
-                    <div key={wf.id} draggable onDragStart={(e) => handleDragStart(e, wf.id)}>
+                    <div 
+                        key={wf.id} 
+                        draggable 
+                        onDragStart={(e) => handleDragStart(e, wf.id)}
+                        onClick={() => onOpenDispute(wf)}
+                        className="cursor-pointer"
+                    >
                         <DisputeCard workflow={wf} />
                     </div>
                 ))}
@@ -74,7 +81,7 @@ const DisputeColumn: React.FC<DisputeColumnProps> = ({ status, workflows, onDrop
 };
 
 
-export const DisputesHub: React.FC<DisputesHubProps> = ({ disputedWorkflows, onUpdateDisputeStatus }) => {
+export const DisputesHub: React.FC<DisputesHubProps> = ({ disputedWorkflows, onUpdateDisputeStatus, onOpenDispute }) => {
   const columns: DisputeStatus[] = ['New', 'Under Review', 'Resolution Proposed', 'Resolved'];
   
   const workflowsByStatus = (status: DisputeStatus) => 
@@ -110,6 +117,7 @@ export const DisputesHub: React.FC<DisputesHubProps> = ({ disputedWorkflows, onU
                 status={status}
                 workflows={workflowsByStatus(status)}
                 onDrop={handleDrop}
+                onOpenDispute={onOpenDispute}
             />
         ))}
       </div>

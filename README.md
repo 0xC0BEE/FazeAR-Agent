@@ -11,7 +11,8 @@ This project is a functional prototype built with React, TypeScript, and Tailwin
 -   **Tone & Language Adjustment:** Guide the AI agent's communication style by selecting a tone (e.g., Friendly, Formal, Firm) for its responses, perfect for drafting client emails.
 -   **Automated Workflow Tracker:** A central dashboard to monitor the status of all outstanding invoices, with intelligent filtering and sorting for Overdue and In-Progress items.
 -   **AI Autonomous Mode:** Activate the agent to proactively manage collections. Based on customizable dunning plans, the agent will **autonomously draft and log personalized follow-up emails** for overdue invoices, ready for your review.
--   **Dispute Management Hub:** A dedicated hub featuring a **Kanban-style board** to manage disputed invoices through a clear, visual, drag-and-drop workflow.
+-   **AI-Powered Dispute Resolution:** The Disputes Hub is now an intelligent resolution center. Clicking a disputed invoice opens a dedicated modal where the AI provides an **instant case summary** and **actionable resolution suggestions**. Execute complex actions, like drafting a request for more information, with a single click.
+-   **AI Live Call Simulation:** Initiate a real-time, voice-based simulated phone call with an AI playing the role of the client's accounts payable department. Features live audio and a streaming transcript, with an AI-generated call summary at the end.
 -   **Customizable Dunning Plans:** A full CRUD interface in the settings modal allows you to create, edit, and delete multi-step dunning plans to match your business's collection strategy.
 -   **AI-Powered Cash Application:** Paste unstructured remittance text from bank statements or emails, and the AI will instantly parse the data and match payments to open invoices.
 -   **Insightful Analytics:** A dedicated analytics view provides a detailed Invoice Aging Report and a Collector Performance dashboard to track key AR metrics.

@@ -37,6 +37,7 @@ The "Overwhelmed Finance Leader" at a growing company. This could be a CFO, Cont
 2.  **Proactive & Autonomous Agent:** The "set it and forget it" Autonomous Mode is a powerful selling point for lean teams. The agent works 24/7, executing your collection strategy based on fully customizable Dunning Plans.
 3.  **Human-AI Collaboration:** FazeAR is built for teams. The agent handles the repetitive tasks, while humans can intervene, add notes, and take over complex cases at any time, with all actions logged in a unified audit trail.
 4.  **Democratized Power:** We provide enterprise-grade capabilities like AI-powered Cash Application and Conversational Analytics in a package that is accessible and affordable for SMBs.
+5.  **AI-Powered Dispute Resolution:** Turn your most complex collection challenges into opportunities. The agent doesn't just track disputes; it analyzes the entire case history and provides actionable, one-click resolution suggestions, drastically reducing investigation time and standardizing your response strategy.
 
 ---
 
@@ -67,7 +68,7 @@ The "Overwhelmed Finance Leader" at a growing company. This could be a CFO, Cont
 ### Pricing Strategy (SaaS Model)
 -   **Pro Plan ($199/month):** For small teams (up to 2 users). Includes core automation, workflow management, conversational agent, and customizable Dunning Plans.
 -   **Business Plan ($499/month):** For growing teams (up to 5 users). Includes everything in Pro, plus Advanced Analytics, AI Autonomous Mode, and AI-Powered Cash Application.
--   **Enterprise Plan (Custom Pricing):** For larger teams. Includes everything in Business, plus advanced features like Dispute Management, live API integrations, and the future Client Collaboration Portal.
+-   **Enterprise Plan (Custom Pricing):** For larger teams. Includes everything in Business, plus advanced features like the **AI-Powered Dispute Resolution Center**, live API integrations, and the future Client Collaboration Portal.
 
 ### Sales Process
 1.  **Inbound Funnel:** The majority of leads will come from the PLG free trial and webinar sign-ups.
