@@ -1,12 +1,11 @@
 import { GoogleGenAI, FunctionDeclaration, Type, GenerateContentResponse } from '@google/genai';
 import type { ChatMessage, Workflow, Tone, Match, Settings, User } from '../types.ts';
 
-if (!process.env.API_KEY) {
-    console.warn("API_KEY environment variable not set. Using a placeholder.");
-    process.env.API_KEY = "mock-api-key-for-development";
-}
+let ai: GoogleGenAI | null = null;
 
-const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+export const initializeAi = (apiKey: string) => {
+    ai = new GoogleGenAI({ apiKey });
+};
 
 const assignWorkflow: FunctionDeclaration = {
     name: 'assign_workflow',
@@ -87,6 +86,7 @@ export const generateChatResponse = async (
     tone: Tone,
     workflows: Workflow[]
 ) : Promise<{ text: string | null, toolCall: { name: string, args: any } | null }> => {
+    if (!ai) throw new Error("AI service not initialized. Please provide an API key.");
     
     const systemInstruction = `You are an AI assistant for an accounts receivable platform called FazeAR. Your purpose is to help collectors manage workflows, communicate with clients, and analyze data.
     - Today's date is ${new Date().toLocaleDateString()}.
@@ -123,6 +123,7 @@ export const generateChatResponse = async (
 };
 
 export const analyzeRemittanceAdvice = async (text: string, workflows: Workflow[]): Promise<Match[]> => {
+    if (!ai) throw new Error("AI service not initialized. Please provide an API key.");
     const prompt = `
         Analyze the following remittance advice text. For each payment mentioned, extract the client name or identifier, the invoice number or reference, and the amount paid.
         Then, match each payment to one of the provided open workflows. 
@@ -173,6 +174,7 @@ export const analyzeRemittanceAdvice = async (text: string, workflows: Workflow[
 };
 
 export const runAnalyticsQuery = async (prompt: string, workflows: Workflow[], users: User[]): Promise<string> => {
+    if (!ai) throw new Error("AI service not initialized. Please provide an API key.");
     const systemInstruction = `You are a data analyst for an AR platform. Answer the user's question based on the provided JSON data for workflows and users. Provide a concise, text-based answer.
     
     Workflows Data: ${JSON.stringify(workflows)}
@@ -192,6 +194,7 @@ export const runAnalyticsQuery = async (prompt: string, workflows: Workflow[], u
 
 
 export const generateWhatIfScenario = async (prompt: string, originalWorkflows: Workflow[]): Promise<Workflow[]> => {
+    if (!ai) throw new Error("AI service not initialized. Please provide an API key.");
     const systemInstruction = `You are a financial planning AI. The user will provide a "what-if" scenario. Your task is to modify the provided list of workflows according to the scenario and return ONLY the modified list of workflows as a valid JSON array. Do not include any other text or explanations.
     
     Original Workflows: ${JSON.stringify(originalWorkflows)}

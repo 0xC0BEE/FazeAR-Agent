@@ -6,18 +6,20 @@ import { SettingsModal } from './components/SettingsModal.tsx';
 import { NotificationToaster } from './components/NotificationToaster.tsx';
 import { MOCK_USERS, MOCK_WORKFLOWS, MOCK_SETTINGS } from './mockData.ts';
 import type { User, Workflow, ChatMessage, Settings, Notification as NotificationType, Tone, Match, DisputeStatus } from './types.ts';
-import { generateChatResponse, analyzeRemittanceAdvice, runAnalyticsQuery, generateWhatIfScenario } from './services/geminiService.ts';
+import { generateChatResponse, analyzeRemittanceAdvice, runAnalyticsQuery, generateWhatIfScenario, initializeAi } from './services/geminiService.ts';
 import { Analytics } from './components/Analytics.tsx';
 import { IntegrationsHub } from './components/IntegrationsHub.tsx';
 import { PaymentPortal } from './components/PaymentPortal.tsx';
 import { KnowledgeBase } from './components/KnowledgeBase.tsx';
 import { DisputesHub } from './components/DisputesHub.tsx';
 import { InvoiceModal } from './components/InvoiceModal.tsx';
+import { ApiKeyModal } from './components/ApiKeyModal.tsx';
 
 
 type View = 'dashboard' | 'analytics' | 'integrations' | 'portal' | 'knowledge' | 'disputes';
 
 const App: React.FC = () => {
+    const [apiKey, setApiKey] = useState<string | null>(null);
     const [users] = useState<User[]>(MOCK_USERS);
     const [currentUser, setCurrentUser] = useState<User>(MOCK_USERS[0]);
     const [workflows, setWorkflows] = useState<Workflow[]>(MOCK_WORKFLOWS);
@@ -35,6 +37,19 @@ const App: React.FC = () => {
     
     const [scenarioWorkflows, setScenarioWorkflows] = useState<Workflow[] | null>(null);
     const [viewingInvoice, setViewingInvoice] = useState<Workflow | null>(null);
+
+    useEffect(() => {
+        const storedKey = sessionStorage.getItem('gemini-api-key');
+        if (storedKey) {
+            setApiKey(storedKey);
+        }
+    }, []);
+
+    useEffect(() => {
+        if (apiKey) {
+            initializeAi(apiKey);
+        }
+    }, [apiKey]);
 
     // Autonomous agent simulation
     useEffect(() => {
@@ -296,6 +311,15 @@ const App: React.FC = () => {
         } : w));
         addNotification('info', `Dispute status updated to "${newStatus}".`);
     };
+
+    const handleSaveApiKey = (key: string) => {
+        sessionStorage.setItem('gemini-api-key', key);
+        setApiKey(key);
+    };
+
+    if (!apiKey) {
+        return <ApiKeyModal onSave={handleSaveApiKey} />;
+    }
 
     const clientWorkflows = currentUser.role === 'Client' ? workflows.filter(w => w.clientName === currentUser.clientName) : [];
 

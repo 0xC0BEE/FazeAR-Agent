@@ -39,14 +39,6 @@ export const Dashboard: React.FC<DashboardProps> = ({
         return workflows.find(w => w.id === selectedWorkflowId) || null;
     }, [selectedWorkflowId, workflows]);
 
-    // When the selected workflow is disputed, clear the selection
-    // so it disappears from the inspector and user knows to go to Disputes Hub
-    React.useEffect(() => {
-        if (selectedWorkflow?.disputeStatus) {
-            setSelectedWorkflowId(null);
-        }
-    }, [selectedWorkflow]);
-
     return (
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 h-full">
             {/* Column 1: Workflow Tracker */}
