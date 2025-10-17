@@ -3,20 +3,32 @@ import React from 'react';
 import { SettingsIcon } from './icons/SettingsIcon.tsx';
 import { UserIcon } from './icons/UserIcon.tsx';
 import { ChevronDownIcon } from './icons/ChevronDownIcon.tsx';
+import { BotIcon } from './icons/BotIcon.tsx';
 import type { User } from '../types.ts';
 
 interface HeaderProps {
   onOpenSettings: () => void;
-  currentView: 'dashboard' | 'analytics';
-  onSetView: (view: 'dashboard' | 'analytics') => void;
+  currentView: 'dashboard' | 'analytics' | 'portal';
+  onSetView: (view: 'dashboard' | 'analytics' | 'portal') => void;
   users: User[];
   currentUser: User;
   onSetCurrentUser: (user: User) => void;
+  isGlobalAutonomous: boolean;
+  onSetGlobalAutonomous: (isActive: boolean) => void;
 }
 
-export const Header: React.FC<HeaderProps> = ({ onOpenSettings, currentView, onSetView, users, currentUser, onSetCurrentUser }) => {
+export const Header: React.FC<HeaderProps> = ({ 
+    onOpenSettings, 
+    currentView, 
+    onSetView, 
+    users, 
+    currentUser, 
+    onSetCurrentUser,
+    isGlobalAutonomous,
+    onSetGlobalAutonomous
+}) => {
   const navItems: ('dashboard' | 'analytics')[] = ['dashboard', 'analytics'];
-  const canViewAnalytics = currentUser.role === 'Admin' || currentUser.role === 'Manager';
+  const canManageSettings = currentUser.role === 'Admin' || currentUser.role === 'Manager';
 
   return (
     <header className="flex flex-col sm:flex-row justify-between sm:items-center mb-6 gap-4">
@@ -45,7 +57,7 @@ export const Header: React.FC<HeaderProps> = ({ onOpenSettings, currentView, onS
          </div>
          <div className="bg-slate-800 border border-slate-700 rounded-lg p-1 flex gap-1">
              {navItems.map(item => {
-                if (item === 'analytics' && !canViewAnalytics) return null;
+                if (item === 'analytics' && !canManageSettings) return null;
                 return (
                  <button 
                     key={item}
@@ -61,7 +73,33 @@ export const Header: React.FC<HeaderProps> = ({ onOpenSettings, currentView, onS
                 )
             })}
          </div>
-         {currentUser.role !== 'Collector' && (
+          <button 
+            onClick={() => onSetView('portal')}
+            className={`px-3 py-2 text-sm font-semibold rounded-lg transition-colors bg-slate-800 border border-slate-700 ${
+                currentView === 'portal'
+                    ? 'text-white ring-1 ring-blue-500'
+                    : 'text-slate-400 hover:bg-slate-700 hover:text-white'
+            }`}
+          >
+             Client Portal
+          </button>
+         {canManageSettings && (
+            <>
+            <div className="flex items-center gap-2 bg-slate-800 border border-slate-700 rounded-lg pl-3 pr-1 py-1 text-sm">
+                <div className="flex items-center gap-1.5">
+                    <BotIcon className={`w-5 h-5 ${isGlobalAutonomous ? 'text-purple-400 animate-pulse' : 'text-slate-500'}`} />
+                    <span className={`font-semibold ${isGlobalAutonomous ? 'text-white' : 'text-slate-400'}`}>Autonomous</span>
+                </div>
+                 <label className="relative inline-flex items-center cursor-pointer">
+                  <input 
+                    type="checkbox" 
+                    checked={isGlobalAutonomous}
+                    onChange={(e) => onSetGlobalAutonomous(e.target.checked)}
+                    className="sr-only peer"
+                  />
+                  <div className="w-11 h-6 bg-slate-600 rounded-full peer peer-focus:ring-2 peer-focus:ring-purple-500 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-purple-600"></div>
+                </label>
+            </div>
              <button
                 onClick={onOpenSettings}
                 className="p-2 rounded-lg text-slate-400 bg-slate-800 border border-slate-700 hover:bg-slate-700 hover:text-white transition-colors"
@@ -69,6 +107,7 @@ export const Header: React.FC<HeaderProps> = ({ onOpenSettings, currentView, onS
              >
                 <SettingsIcon className="w-6 h-6" />
              </button>
+            </>
          )}
       </div>
     </header>

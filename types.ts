@@ -1,19 +1,7 @@
-
 export interface User {
   id: string;
   name: string;
   role: 'Admin' | 'Manager' | 'Collector';
-}
-
-export interface DunningStep {
-  day: number;
-  action: 'EMAIL' | 'CALL';
-  template: string;
-}
-
-export interface DunningPlan {
-  name: string;
-  steps: DunningStep[];
 }
 
 export interface AuditTrailEntry {
@@ -24,24 +12,59 @@ export interface AuditTrailEntry {
 
 export interface Workflow {
   id: string;
-  externalId: string; // e.g., from QuickBooks
   clientName: string;
   amount: number;
-  dueDate: string;
-  createdDate: string;
-  status: 'In Progress' | 'Overdue' | 'Completed';
+  dueDate: string; // YYYY-MM-DD
+  status: 'Overdue' | 'In Progress' | 'Completed';
   assignee: string;
-  dunningPlan: string;
-  currentStep: number;
   auditTrail: AuditTrailEntry[];
-  paymentDate?: string;
+  externalId: string;
+  dunningPlan: string;
+  paymentDate?: string; // YYYY-MM-DD
+  createdDate: string; // YYYY-MM-DD
+  isAutonomous: boolean;
+}
+
+export interface ToolCall {
+  id: string;
+  name: string;
+  args: Record<string, any>;
+}
+
+export interface ToolResponse {
+  id: string;
+  name: string;
+  response: any;
 }
 
 export interface ChatMessage {
   id: string;
   role: 'user' | 'model' | 'tool';
   content?: string;
-  toolCall?: { id: string; name: string; args: any };
-  toolResponse?: { id: string; name: string; response: any };
   isThinking?: boolean;
+  toolCall?: ToolCall;
+  toolResponse?: ToolResponse;
+}
+
+export interface DunningStep {
+  id:string;
+  day: number;
+  template: string;
+}
+
+export interface DunningPlan {
+  id: string;
+  name: string;
+  steps: DunningStep[];
+}
+
+export interface Integration {
+  id: 'quickbooks' | 'stripe' | 'gmail';
+  name: string;
+  connected: boolean;
+}
+
+export interface Settings {
+  dunningPlans: DunningPlan[];
+  integrations: Integration[];
 }

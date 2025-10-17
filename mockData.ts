@@ -1,120 +1,109 @@
-
-import { User, DunningPlan, Workflow } from './types.ts';
 import { v4 as uuidv4 } from 'uuid';
+import type { User, Workflow, Settings } from './types.ts';
 
-export const USERS: User[] = [
-  { id: 'user-1', name: 'Alex Johnson', role: 'Admin' },
-  { id: 'user-2', name: 'Maria Garcia', role: 'Manager' },
-  { id: 'user-3', name: 'David Chen', role: 'Collector' },
-  { id: 'user-4', name: 'Emily White', role: 'Collector' },
+const today = new Date();
+const formatDate = (date: Date) => date.toISOString().split('T')[0];
+
+export const MOCK_USERS: User[] = [
+  { id: '1', name: 'Alex Johnson', role: 'Admin' },
+  { id: '2', name: 'Maria Garcia', role: 'Manager' },
+  { id: '3', name: 'David Chen', role: 'Collector' },
+  { id: '4', name: 'Sarah Lee', role: 'Collector' },
 ];
 
-export const DUNNING_PLANS: DunningPlan[] = [
-  {
-    name: 'Standard',
-    steps: [
-      { day: 3, action: 'EMAIL', template: 'Gentle Reminder' },
-      { day: 15, action: 'EMAIL', template: 'Second Notice' },
-      { day: 30, action: 'CALL', template: 'First Call Script' },
-      { day: 45, action: 'EMAIL', template: 'Final Notice' },
-    ],
-  },
-  {
-    name: 'Aggressive',
-    steps: [
-      { day: 1, action: 'EMAIL', template: 'Payment Due' },
-      { day: 7, action: 'CALL', template: 'First Call Script' },
-      { day: 14, action: 'EMAIL', template: 'Second Notice (Urgent)' },
-      { day: 21, action: 'CALL', template: 'Second Call Script' },
-      { day: 30, action: 'EMAIL', template: 'Final Notice (Action Required)' },
-    ],
-  },
-];
+const generateWorkflows = (): Workflow[] => {
+    const assignees = ['David Chen', 'Sarah Lee', 'Maria Garcia'];
+    const clients = ['Innovate Corp', 'Nexus Solutions', 'Quantum Dynamics', 'Starlight Enterprises', 'Apex Industries', 'Momentum Labs'];
+    const plans = ['Standard Net 30', 'Aggressive', 'Gentle Reminder'];
+    
+    let workflows: Workflow[] = [];
 
-const generateRandomDate = (start: Date, end: Date): string => {
-  return new Date(start.getTime() + Math.random() * (end.getTime() - start.getTime())).toISOString().split('T')[0];
+    for (let i = 0; i < 25; i++) {
+        const createDateOffset = Math.floor(Math.random() * 90);
+        const createdDate = new Date(today.getTime() - createDateOffset * 24 * 60 * 60 * 1000);
+        const dueDate = new Date(createdDate.getTime() + 30 * 24 * 60 * 60 * 1000);
+        const isOverdue = today > dueDate;
+        const isCompleted = Math.random() > 0.7;
+        
+        let status: 'Overdue' | 'In Progress' | 'Completed' = 'In Progress';
+        if (isCompleted) {
+            status = 'Completed';
+        } else if (isOverdue) {
+            status = 'Overdue';
+        }
+
+        workflows.push({
+            id: `wf_${uuidv4()}`,
+            clientName: clients[i % clients.length],
+            amount: Math.floor(Math.random() * (25000 - 1000 + 1)) + 1000,
+            dueDate: formatDate(dueDate),
+            status: status,
+            assignee: assignees[i % assignees.length],
+            auditTrail: [
+                { timestamp: new Date(createdDate.getTime() + 1 * 24 * 60 * 60 * 1000).toISOString(), activity: 'Invoice Created', details: 'Automatically generated via QuickBooks integration.' },
+                ...(status === 'Overdue' ? [{ timestamp: new Date(dueDate.getTime() + 2 * 24 * 60 * 60 * 1000).toISOString(), activity: 'Reminder Sent', details: 'Automated email reminder sent.' }] : []),
+                ...(status === 'Completed' ? [{ timestamp: new Date(dueDate.getTime() - 5 * 24 * 60 * 60 * 1000).toISOString(), activity: 'Payment Received', details: 'Payment processed via Stripe.' }] : [])
+            ],
+            externalId: `inv_${1001 + i}`,
+            dunningPlan: plans[i % plans.length],
+            paymentDate: status === 'Completed' ? formatDate(new Date(dueDate.getTime() - 5 * 24 * 60 * 60 * 1000)) : undefined,
+            createdDate: formatDate(createdDate),
+            isAutonomous: status === 'Overdue' && Math.random() > 0.5, // Randomly set some overdue invoices to autonomous
+        });
+    }
+    return workflows;
 };
 
-export const WORKFLOWS: Workflow[] = [
-  // Overdue
-  {
-    id: `wf-a1b7c7f5`,
-    externalId: 'qb_inv_88a1b7',
-    clientName: 'Innovate Corp',
-    amount: 25000,
-    dueDate: '2024-06-15',
-    createdDate: '2024-05-16',
-    status: 'Overdue',
-    assignee: 'David Chen',
-    dunningPlan: 'Standard',
-    currentStep: 2,
-    auditTrail: [
-        { timestamp: '2024-06-18T10:00:00Z', activity: 'Email Sent', details: 'Template: Second Notice' },
-        { timestamp: '2024-05-19T09:00:00Z', activity: 'Email Sent', details: 'Template: Gentle Reminder' }
-    ],
-  },
-  {
-    id: `wf-d8e9f0a1`,
-    externalId: 'qb_inv_92c3d8',
-    clientName: 'Quantum Solutions',
-    amount: 15234.50,
-    dueDate: '2024-05-20',
-    createdDate: '2024-04-20',
-    status: 'Overdue',
-    assignee: 'Emily White',
-    dunningPlan: 'Aggressive',
-    currentStep: 4,
-    auditTrail: [ { timestamp: '2024-05-28T14:20:10Z', activity: 'Call Logged', details: 'Left voicemail with contact.' } ],
-  },
-  // In Progress
-  {
-    id: `wf-b2c3d4e5`,
-    externalId: 'qb_inv_75e9f0',
-    clientName: 'Synergy Partners',
-    amount: 7800,
-    dueDate: '2024-08-01',
-    createdDate: '2024-07-02',
-    status: 'In Progress',
-    assignee: 'David Chen',
-    dunningPlan: 'Standard',
-    currentStep: 0,
-    auditTrail: [],
-  },
-  {
-    id: `wf-f6g7h8i9`,
-    externalId: 'qb_inv_b4a0e1',
-    clientName: 'Apex Industries',
-    amount: 42500,
-    dueDate: '2024-07-25',
-    createdDate: '2024-06-25',
-    status: 'In Progress',
-    assignee: 'Emily White',
-    dunningPlan: 'Standard',
-    currentStep: 0,
-    auditTrail: [],
-  },
-  // More data
-  ...Array.from({ length: 20 }, (_, i) => {
-    const clientNames = ['Nexus Tech', 'Visionary Inc.', 'Pinnacle Group', 'Momentum LLC', 'Starlight Enterprises'];
-    const assignees = ['David Chen', 'Emily White'];
-    const created = new Date();
-    created.setDate(created.getDate() - i * 5 - 10);
-    const due = new Date(created);
-    due.setDate(due.getDate() + 30);
-    const today = new Date();
-    const isOverdue = due < today;
-    return {
-        id: `wf-${uuidv4().slice(0, 8)}`,
-        externalId: `qb_inv_${uuidv4().slice(0, 6)}`,
-        clientName: clientNames[i % clientNames.length],
-        amount: Math.floor(Math.random() * (50000 - 500 + 1)) + 500,
-        dueDate: due.toISOString().split('T')[0],
-        createdDate: created.toISOString().split('T')[0],
-        status: isOverdue ? 'Overdue' : 'In Progress',
-        assignee: assignees[i % assignees.length],
-        dunningPlan: 'Standard',
-        currentStep: isOverdue ? 1 : 0,
-        auditTrail: isOverdue ? [{ timestamp: new Date(new Date(due).setDate(due.getDate() + 3)).toISOString(), activity: 'Email Sent', details: 'Template: Gentle Reminder' }] : [],
-    } as Workflow
-  })
-];
+export const MOCK_WORKFLOWS: Workflow[] = generateWorkflows();
+
+export const MOCK_SETTINGS: Settings = {
+  dunningPlans: [
+    {
+      id: 'plan1',
+      name: 'Standard Net 30',
+      steps: [
+        { id: 's1', day: 1, template: 'First Reminder' },
+        { id: 's2', day: 7, template: 'Second Reminder' },
+        { id: 's3', day: 15, template: 'Final Notice' },
+      ],
+    },
+    {
+      id: 'plan2',
+      name: 'Aggressive',
+      steps: [
+        { id: 's4', day: 1, template: 'Immediate Follow-up' },
+        { id: 's5', day: 3, template: 'Second Follow-up' },
+        { id: 's6', day: 5, template: 'Escalation Notice' },
+      ],
+    },
+     {
+      id: 'plan3',
+      name: 'Gentle Reminder',
+      steps: [
+        { id: 's7', day: 3, template: 'Friendly Reminder' },
+        { id: 's8', day: 14, template: 'Gentle Follow-up' },
+      ],
+    },
+  ],
+  integrations: [
+    { id: 'quickbooks', name: 'QuickBooks', connected: true },
+    { id: 'stripe', name: 'Stripe', connected: true },
+    { id: 'gmail', name: 'Gmail', connected: false },
+  ],
+};
+
+export const MOCK_REMITTANCE_ADVICE = `
+From: accounting@innovatecorp.com
+Subject: Payment Advice
+
+Hi Team,
+
+Please see attached remittance for our latest wire transfer.
+
+- Invoice inv_1001, Amount: $12550.00 (Innovate Corp)
+- Inv # inv_1004, Paid: $8300 (For Starlight)
+- Apex Industries payment for inv_1005 for 21000 dollars
+
+Thanks,
+John @ Innovate
+`;

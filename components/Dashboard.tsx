@@ -13,14 +13,16 @@ interface DashboardProps {
   selectedWorkflow: Workflow | null;
   onSelectWorkflow: (id: string) => void;
   onUpdateWorkflows: (workflows: Workflow[]) => void;
-  onPaymentReceived: (id: string) => void;
-  onNewInvoice: (data: any) => void;
+  onSimulateEvent: (type: string, data: any) => void;
   onAddNote: (note: string) => void;
   messages: ChatMessage[];
   isLoading: boolean;
   onSendMessage: (input: string) => void;
   scenarioWorkflows: Workflow[] | null;
   onClearScenario: () => void;
+  onToggleWorkflowAutonomy: (workflowId: string) => void;
+  remittanceText: string;
+  onSetRemittanceText: (text: string) => void;
 }
 
 export const Dashboard: React.FC<DashboardProps> = ({
@@ -29,14 +31,16 @@ export const Dashboard: React.FC<DashboardProps> = ({
   selectedWorkflow,
   onSelectWorkflow,
   onUpdateWorkflows,
-  onPaymentReceived,
-  onNewInvoice,
+  onSimulateEvent,
   onAddNote,
   messages,
   isLoading,
   onSendMessage,
   scenarioWorkflows,
-  onClearScenario
+  onClearScenario,
+  onToggleWorkflowAutonomy,
+  remittanceText,
+  onSetRemittanceText,
 }) => {
   return (
     <div className="grid grid-cols-1 xl:grid-cols-12 gap-6 h-full min-h-0">
@@ -63,6 +67,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
           <InspectorPanel
             workflow={selectedWorkflow}
             onAddNote={onAddNote}
+            onToggleWorkflowAutonomy={onToggleWorkflowAutonomy}
           />
         </div>
       </div>
@@ -79,13 +84,17 @@ export const Dashboard: React.FC<DashboardProps> = ({
           />
         </div>
         <div className="flex-shrink-0">
-            <CashAppPanel workflows={workflows} onUpdateWorkflows={onUpdateWorkflows} />
+            <CashAppPanel 
+              workflows={workflows} 
+              onUpdateWorkflows={onUpdateWorkflows} 
+              remittanceText={remittanceText}
+              onSetRemittanceText={onSetRemittanceText}
+            />
         </div>
         <div className="flex-shrink-0">
             <WebhookListener 
                 workflows={workflows} 
-                onPaymentReceived={onPaymentReceived} 
-                onNewInvoice={onNewInvoice}
+                onSimulateEvent={onSimulateEvent}
             />
         </div>
       </div>

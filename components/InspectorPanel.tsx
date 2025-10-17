@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import type { Workflow } from '../types.ts';
 import { ClipboardListIcon } from './icons/ClipboardListIcon.tsx';
@@ -7,13 +6,15 @@ import { CalendarIcon } from './icons/CalendarIcon.tsx';
 import { UserIcon } from './icons/UserIcon.tsx';
 import { NoteIcon } from './icons/NoteIcon.tsx';
 import { SpinnerIcon } from './icons/SpinnerIcon.tsx';
+import { BotIcon } from './icons/BotIcon.tsx';
 
 interface InspectorPanelProps {
   workflow: Workflow | null;
   onAddNote: (note: string) => void;
+  onToggleWorkflowAutonomy: (workflowId: string) => void;
 }
 
-export const InspectorPanel: React.FC<InspectorPanelProps> = ({ workflow, onAddNote }) => {
+export const InspectorPanel: React.FC<InspectorPanelProps> = ({ workflow, onAddNote, onToggleWorkflowAutonomy }) => {
   const [note, setNote] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -43,8 +44,25 @@ export const InspectorPanel: React.FC<InspectorPanelProps> = ({ workflow, onAddN
   return (
     <div className="flex flex-col h-full bg-slate-800/50 rounded-lg shadow-lg border border-slate-700">
       <div className="p-4 border-b border-slate-700">
-        <h2 className="text-lg font-semibold text-white">Inspector: {workflow.clientName}</h2>
-        <p className="text-sm text-slate-400">Invoice ID: {workflow.externalId}</p>
+        <div className="flex justify-between items-center">
+             <div>
+                <h2 className="text-lg font-semibold text-white">Inspector: {workflow.clientName}</h2>
+                <p className="text-sm text-slate-400">Invoice ID: {workflow.externalId}</p>
+             </div>
+             <div className="flex items-center gap-2 text-sm">
+                <BotIcon className={`w-5 h-5 ${workflow.isAutonomous ? 'text-purple-400' : 'text-slate-500'}`} />
+                 <span className={`font-semibold ${workflow.isAutonomous ? 'text-white' : 'text-slate-400'}`}>Autonomous</span>
+                 <label className="relative inline-flex items-center cursor-pointer">
+                    <input 
+                        type="checkbox" 
+                        checked={workflow.isAutonomous}
+                        onChange={() => onToggleWorkflowAutonomy(workflow.id)}
+                        className="sr-only peer"
+                    />
+                    <div className="w-11 h-6 bg-slate-600 rounded-full peer peer-focus:ring-2 peer-focus:ring-purple-500 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-purple-600"></div>
+                </label>
+             </div>
+        </div>
       </div>
       <div className="flex-1 p-4 overflow-y-auto space-y-4">
         <div className="grid grid-cols-2 gap-4 text-sm">
@@ -86,14 +104,18 @@ export const InspectorPanel: React.FC<InspectorPanelProps> = ({ workflow, onAddN
             {workflow.auditTrail.length === 0 ? (
                 <p className="text-xs text-slate-500 italic">No notes or activities recorded yet.</p>
             ) : (
-                [...workflow.auditTrail].reverse().map((entry, index) => (
-                    <div key={index} className="bg-slate-900/50 p-2 rounded-md">
-                        <p className="text-xs text-slate-400 mb-1">
-                            {new Date(entry.timestamp).toLocaleString()} - <span className="font-semibold text-slate-300">{entry.activity}</span>
-                        </p>
-                        <p className="text-sm text-slate-200 whitespace-pre-wrap">{entry.details}</p>
-                    </div>
-                ))
+                [...workflow.auditTrail].reverse().map((entry, index) => {
+                    const isAutonomous = entry.activity === 'Autonomous Action';
+                    return (
+                        <div key={index} className="bg-slate-900/50 p-2 rounded-md">
+                            <p className="text-xs text-slate-400 mb-1 flex items-center gap-2">
+                               {isAutonomous && <BotIcon className="w-3.5 h-3.5 text-purple-400" />}
+                               <span>{new Date(entry.timestamp).toLocaleString()} - <span className="font-semibold text-slate-300">{entry.activity}</span></span>
+                            </p>
+                            <p className="text-sm text-slate-200 whitespace-pre-wrap pl-1">{entry.details}</p>
+                        </div>
+                    );
+                })
             )}
           </div>
         </div>

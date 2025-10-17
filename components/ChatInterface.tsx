@@ -3,6 +3,7 @@ import { BotIcon } from './icons/BotIcon.tsx';
 import { UserIcon } from './icons/UserIcon.tsx';
 import { SparklesIcon } from './icons/SparklesIcon.tsx';
 import { SpinnerIcon } from './icons/SpinnerIcon.tsx';
+import { WrenchScrewdriverIcon } from './icons/WrenchScrewdriverIcon.tsx';
 import type { Workflow, User, ChatMessage } from '../types.ts';
 
 interface ChatInterfaceProps {
@@ -31,8 +32,8 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ currentUser, selec
     
     const quickPrompts = [
         "Summarize the aging report.",
-        selectedWorkflow ? `What's the status of ${selectedWorkflow.clientName}?` : "Run a cash flow scenario where Innovate Corp pays 30 days late.",
-        "Who is the top performing collector?",
+        selectedWorkflow ? `Send a reminder for invoice ${selectedWorkflow.externalId}.` : "Assign Quantum Dynamics to Sarah Lee.",
+        "Add a note to Apex Industries: 'Client promised payment next week.'",
     ];
 
     return (
@@ -42,35 +43,43 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ currentUser, selec
                 <h2 className="text-lg font-semibold text-white">AI Assistant</h2>
             </div>
             <div className="flex-1 p-4 overflow-y-auto space-y-4">
-                {messages.map((msg) => (
-                    <div key={msg.id} className={`flex items-start gap-3 ${msg.role === 'user' ? 'justify-end' : ''}`}>
-                        {msg.role === 'model' && !msg.toolCall && (
-                            <div className="w-8 h-8 rounded-full bg-slate-700 flex items-center justify-center flex-shrink-0">
-                                <BotIcon className="w-5 h-5 text-purple-400" />
+                {messages.map((msg) => {
+                    if (msg.role === 'tool') return null; // Don't render tool responses
+                    return (
+                        <div key={msg.id} className={`flex items-start gap-3 ${msg.role === 'user' ? 'justify-end' : ''}`}>
+                            {msg.role === 'model' && (
+                                <div className="w-8 h-8 rounded-full bg-slate-700 flex items-center justify-center flex-shrink-0">
+                                    <BotIcon className="w-5 h-5 text-purple-400" />
+                                </div>
+                            )}
+                            <div className={`max-w-md p-3 rounded-lg ${msg.role === 'model' ? (msg.toolCall ? 'bg-slate-800/70 border border-slate-700' : 'bg-slate-700') : 'bg-blue-600 text-white'}`}>
+                                {msg.isThinking ? (
+                                    <div className="flex items-center gap-2">
+                                        <SpinnerIcon className="w-4 h-4 animate-spin" />
+                                        <span className="text-sm text-slate-400">Thinking...</span>
+                                    </div>
+                                ) : msg.content ? (
+                                    <p className="text-sm whitespace-pre-wrap">{msg.content}</p>
+                                ) : msg.toolCall ? (
+                                    <div className="text-xs text-slate-400 font-mono">
+                                        <div className="flex items-center gap-2 mb-1">
+                                            <WrenchScrewdriverIcon className="w-4 h-4 text-slate-500" />
+                                            <p className="font-semibold text-slate-300">Tool Call:</p>
+                                        </div>
+                                        <div className="bg-slate-900/50 p-2 rounded border border-slate-600">
+                                            <p className="text-purple-400">{msg.toolCall.name}(<span className="text-amber-400">{JSON.stringify(msg.toolCall.args)}</span>)</p>
+                                        </div>
+                                    </div>
+                                ) : null}
                             </div>
-                        )}
-                        <div className={`max-w-md p-3 rounded-lg ${msg.role === 'model' ? (msg.toolCall || msg.toolResponse ? 'bg-slate-800 border border-slate-600' : 'bg-slate-700') : 'bg-blue-600 text-white'}`}>
-                            {msg.isThinking ? (
-                                <div className="flex items-center gap-2">
-                                    <SpinnerIcon className="w-4 h-4 animate-spin" />
-                                    <span className="text-sm text-slate-400">Thinking...</span>
+                            {msg.role === 'user' && (
+                                <div className="w-8 h-8 rounded-full bg-slate-700 flex items-center justify-center flex-shrink-0">
+                                    <UserIcon className="w-5 h-5 text-slate-400" />
                                 </div>
-                            ) : msg.content ? (
-                                <p className="text-sm whitespace-pre-wrap">{msg.content}</p>
-                            ) : msg.toolCall ? (
-                                <div className="text-xs text-slate-400 font-mono">
-                                    <p className="font-semibold text-slate-300">Tool Call:</p>
-                                    <p>{msg.toolCall.name}({JSON.stringify(msg.toolCall.args)})</p>
-                                </div>
-                            ) : null}
+                            )}
                         </div>
-                         {msg.role === 'user' && (
-                            <div className="w-8 h-8 rounded-full bg-slate-700 flex items-center justify-center flex-shrink-0">
-                                <UserIcon className="w-5 h-5 text-slate-400" />
-                            </div>
-                        )}
-                    </div>
-                ))}
+                    );
+                })}
                 <div ref={messagesEndRef} />
             </div>
             <div className="p-4 border-t border-slate-700">

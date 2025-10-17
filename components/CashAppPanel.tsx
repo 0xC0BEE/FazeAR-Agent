@@ -1,5 +1,4 @@
-
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import type { Workflow } from '../types.ts';
 import { UploadIcon } from './icons/UploadIcon.tsx';
 import { SpinnerIcon } from './icons/SpinnerIcon.tsx';
@@ -10,6 +9,8 @@ import { CashAppConfirmationModal } from './CashAppConfirmationModal.tsx';
 interface CashAppPanelProps {
   workflows: Workflow[];
   onUpdateWorkflows: (workflows: Workflow[]) => void;
+  remittanceText: string;
+  onSetRemittanceText: (text: string) => void;
 }
 
 interface Match {
@@ -20,8 +21,7 @@ interface Match {
   status: 'matched' | 'partial' | 'unmatched';
 }
 
-export const CashAppPanel: React.FC<CashAppPanelProps> = ({ workflows, onUpdateWorkflows }) => {
-  const [remittanceText, setRemittanceText] = useState('');
+export const CashAppPanel: React.FC<CashAppPanelProps> = ({ workflows, onUpdateWorkflows, remittanceText, onSetRemittanceText }) => {
   const [isLoading, setIsLoading] = useState(false);
   const [matches, setMatches] = useState<Match[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -35,9 +35,9 @@ export const CashAppPanel: React.FC<CashAppPanelProps> = ({ workflows, onUpdateW
       const parsedData = JSON.parse(response.text);
 
       const newMatches = parsedData.map((item: any) => {
+        // More robust matching: check externalId first, then part of client name and invoice #
         const foundWorkflow = workflows.find(w =>
-          (w.id.includes(item.invoiceId) || item.invoiceId.includes(w.id.slice(-6)))
-          && w.clientName.toLowerCase().includes(item.clientName.toLowerCase())
+          (w.externalId === item.invoiceId || (w.clientName.toLowerCase().includes(item.clientName.toLowerCase()) && item.invoiceId.includes(w.externalId)))
           && w.status !== 'Completed'
         );
         
@@ -64,6 +64,16 @@ export const CashAppPanel: React.FC<CashAppPanelProps> = ({ workflows, onUpdateW
       setIsLoading(false);
     }
   };
+
+  // Automatically trigger analysis when remittanceText is populated from props
+  useEffect(() => {
+    if (remittanceText && !isLoading) {
+      handleAnalyze();
+    }
+    // We only want this to run when the prop changes, not when the user types.
+    // The dependency array is intentionally limited.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [remittanceText]);
   
   const handleConfirm = (confirmedMatches: Match[]) => {
       const workflowIdsToUpdate = confirmedMatches.filter(m => m.workflowId && m.status === 'matched').map(m => m.workflowId);
@@ -80,9 +90,14 @@ export const CashAppPanel: React.FC<CashAppPanelProps> = ({ workflows, onUpdateW
       });
       onUpdateWorkflows(updated);
       setIsModalOpen(false);
-      setRemittanceText('');
+      onSetRemittanceText('');
       setMatches([]);
   };
+
+  const handleManualAnalyzeClick = () => {
+      // This allows the user to manually trigger analysis if they edit the text
+      handleAnalyze();
+  }
 
   return (
     <div className="bg-slate-800 rounded-lg shadow-lg p-4 flex flex-col border border-slate-700">
@@ -93,14 +108,14 @@ export const CashAppPanel: React.FC<CashAppPanelProps> = ({ workflows, onUpdateW
       <p className="text-xs text-slate-400 mb-3">Paste remittance details from a bank statement or email to automatically match payments.</p>
       <textarea
         value={remittanceText}
-        onChange={(e) => setRemittanceText(e.target.value)}
+        onChange={(e) => onSetRemittanceText(e.target.value)}
         placeholder={`e.g.\nPayment from Quantum Solutions\nInv: ...c7f5, Amt: $15234.50\nCheck #: 10592`}
         rows={4}
         className="w-full bg-slate-900 border border-slate-600 rounded-lg px-3 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-blue-500 mb-3 font-mono"
         disabled={isLoading}
       />
       <button
-        onClick={handleAnalyze}
+        onClick={handleManualAnalyzeClick}
         disabled={isLoading || !remittanceText.trim()}
         className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold px-3 py-1.5 rounded-md text-sm transition-colors disabled:bg-slate-600 flex items-center justify-center gap-2"
       >

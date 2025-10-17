@@ -1,112 +1,253 @@
-
-import React, { useState } from 'react';
-import type { DunningPlan, User } from '../types.ts';
+import React, { useState, useEffect } from 'react';
+import type { Settings, Integration, DunningPlan, DunningStep } from '../types.ts';
+import { v4 as uuidv4 } from 'uuid';
 import { XIcon } from './icons/XIcon.tsx';
+import { QuickBooksIcon } from './icons/QuickBooksIcon.tsx';
+import { StripeIcon } from './icons/StripeIcon.tsx';
+import { GmailIcon } from './icons/GmailIcon.tsx';
+import { PlusIcon } from './icons/PlusIcon.tsx';
+import { TrashIcon } from './icons/TrashIcon.tsx';
+import { PencilIcon } from './icons/PencilIcon.tsx';
+import { CheckIcon } from './icons/CheckIcon.tsx';
+
 
 interface SettingsModalProps {
   isOpen: boolean;
   onClose: () => void;
-  dunningPlans: DunningPlan[];
-  onUpdateDunningPlans: (plans: DunningPlan[]) => void;
-  isAutonomousMode: boolean;
-  onSetAutonomousMode: (enabled: boolean) => void;
-  currentUser: User;
+  settings: Settings;
+  onUpdateSettings: (settings: Partial<Settings>) => void;
 }
 
-export const SettingsModal: React.FC<SettingsModalProps> = ({ 
-    isOpen, onClose, dunningPlans, onUpdateDunningPlans, isAutonomousMode, onSetAutonomousMode, currentUser 
-}) => {
-  const [selectedPlan, setSelectedPlan] = useState<DunningPlan>(dunningPlans[0]);
-  const canControlAutonomy = currentUser.role === 'Admin' || currentUser.role === 'Manager';
+export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, settings, onUpdateSettings }) => {
+    const [activeTab, setActiveTab] = useState<'plans' | 'integrations'>('plans');
+    const [editablePlans, setEditablePlans] = useState<DunningPlan[]>([]);
+    const [isAddingPlan, setIsAddingPlan] = useState(false);
+    const [newPlanName, setNewPlanName] = useState('');
+    const [editingPlan, setEditingPlan] = useState<{ id: string, name: string } | null>(null);
 
-  if (!isOpen) {
-    return null;
-  }
-  
-  const handleSelectPlan = (planName: string) => {
-      const plan = dunningPlans.find(p => p.name === planName);
-      if (plan) setSelectedPlan(plan);
-  }
+    useEffect(() => {
+        if (isOpen) {
+            // Deep copy to prevent mutation of original state
+            setEditablePlans(JSON.parse(JSON.stringify(settings.dunningPlans)));
+            setIsAddingPlan(false);
+            setNewPlanName('');
+            setEditingPlan(null);
+        }
+    }, [isOpen, settings.dunningPlans]);
+    
+    if (!isOpen) return null;
 
-  return (
-    <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 transition-opacity duration-300" onClick={onClose}>
-      <div 
-        className="bg-slate-800 rounded-lg shadow-xl w-full max-w-4xl m-4 border border-slate-700 transform transition-transform duration-300 scale-100"
-        onClick={e => e.stopPropagation()}
-      >
-        <div className="p-4 flex justify-between items-center border-b border-slate-700">
-          <h2 className="text-lg font-semibold text-white">Settings</h2>
-          <button onClick={onClose} className="text-slate-400 hover:text-white transition-colors">
-            <XIcon className="w-6 h-6" />
-          </button>
+    const handleIntegrationToggle = (id: Integration['id']) => {
+        const updatedIntegrations = settings.integrations.map(int => 
+            int.id === id ? { ...int, connected: !int.connected } : int
+        );
+        onUpdateSettings({ integrations: updatedIntegrations });
+    };
+
+    const handleSaveChanges = () => {
+        onUpdateSettings({ dunningPlans: editablePlans });
+        onClose();
+    };
+
+    // Plan handlers
+    const handleAddNewPlan = () => {
+        if (!newPlanName.trim()) return;
+        const newPlan: DunningPlan = {
+            id: `plan_${uuidv4()}`,
+            name: newPlanName.trim(),
+            steps: [],
+        };
+        setEditablePlans(prev => [...prev, newPlan]);
+        setNewPlanName('');
+        setIsAddingPlan(false);
+    };
+
+    const handleDeletePlan = (planId: string) => {
+        setEditablePlans(prev => prev.filter(p => p.id !== planId));
+    };
+
+    const handleUpdatePlanName = () => {
+        if (!editingPlan || !editingPlan.name.trim()) return;
+        setEditablePlans(prev => prev.map(p => p.id === editingPlan.id ? { ...p, name: editingPlan.name.trim() } : p));
+        setEditingPlan(null);
+    };
+
+    // Step handlers
+    const handleAddStep = (planId: string) => {
+        const newStep: DunningStep = {
+            id: `step_${uuidv4()}`,
+            day: 0,
+            template: 'New Template',
+        };
+        setEditablePlans(prev => prev.map(p => p.id === planId ? { ...p, steps: [...p.steps, newStep] } : p));
+    };
+
+    const handleUpdateStep = (planId: string, stepId: string, field: 'day' | 'template', value: string | number) => {
+        setEditablePlans(prev => prev.map(p => {
+            if (p.id === planId) {
+                const updatedSteps = p.steps.map(s => s.id === stepId ? { ...s, [field]: value } : s);
+                // Sort by day after update
+                updatedSteps.sort((a,b) => a.day - b.day);
+                return { ...p, steps: updatedSteps };
+            }
+            return p;
+        }));
+    };
+
+    const handleDeleteStep = (planId: string, stepId: string) => {
+        setEditablePlans(prev => prev.map(p => {
+            if (p.id === planId) {
+                return { ...p, steps: p.steps.filter(s => s.id !== stepId) };
+            }
+            return p;
+        }));
+    };
+    
+    return (
+        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 transition-opacity duration-300" onClick={onClose}>
+            <div className="bg-slate-800 rounded-lg shadow-xl w-full max-w-3xl m-4 border border-slate-700 transform transition-transform duration-300 scale-100 flex flex-col" onClick={e => e.stopPropagation()}>
+                <div className="p-4 flex justify-between items-center border-b border-slate-700">
+                    <h2 className="text-lg font-semibold text-white">Settings</h2>
+                    <button onClick={onClose} className="text-slate-400 hover:text-white transition-colors">
+                        <XIcon className="w-6 h-6" />
+                    </button>
+                </div>
+                
+                <div className="border-b border-slate-700">
+                    <nav className="flex space-x-2 px-4">
+                        <button onClick={() => setActiveTab('plans')} className={`px-1 py-2 text-sm font-semibold transition-colors ${activeTab === 'plans' ? 'text-white border-b-2 border-blue-500' : 'text-slate-400 hover:text-white'}`}>
+                            Dunning Plans
+                        </button>
+                        <button onClick={() => setActiveTab('integrations')} className={`px-1 py-2 text-sm font-semibold transition-colors ${activeTab === 'integrations' ? 'text-white border-b-2 border-blue-500' : 'text-slate-400 hover:text-white'}`}>
+                            Integrations
+                        </button>
+                    </nav>
+                </div>
+
+                <div className="p-6 max-h-[60vh] overflow-y-auto">
+                    {activeTab === 'plans' && (
+                       <div className="space-y-4">
+                            <div className="flex justify-between items-center">
+                                <h3 className="text-base font-semibold text-white">Manage your automated follow-up sequences.</h3>
+                                {!isAddingPlan && (
+                                    <button onClick={() => setIsAddingPlan(true)} className="flex items-center gap-1 bg-blue-600 hover:bg-blue-700 text-white font-semibold px-3 py-1.5 rounded-md text-xs transition-colors">
+                                        <PlusIcon className="w-4 h-4" />
+                                        New Plan
+                                    </button>
+                                )}
+                            </div>
+                             {isAddingPlan && (
+                                <div className="bg-slate-900/50 p-3 rounded-lg border border-slate-700 flex gap-2">
+                                    <input
+                                        type="text"
+                                        value={newPlanName}
+                                        onChange={(e) => setNewPlanName(e.target.value)}
+                                        placeholder="New plan name..."
+                                        className="w-full bg-slate-900 border border-slate-600 rounded-lg px-3 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
+                                    />
+                                    <button onClick={handleAddNewPlan} className="bg-green-600 hover:bg-green-700 text-white font-semibold px-3 py-1 rounded-md text-xs">Add</button>
+                                    <button onClick={() => setIsAddingPlan(false)} className="bg-slate-600 hover:bg-slate-500 text-white font-semibold px-3 py-1 rounded-md text-xs">Cancel</button>
+                                </div>
+                            )}
+                            <div className="space-y-3">
+                                {editablePlans.map(plan => (
+                                    <div key={plan.id} className="bg-slate-900/50 p-3 rounded-lg border border-slate-700">
+                                        <div className="flex justify-between items-center mb-3">
+                                            {editingPlan?.id === plan.id ? (
+                                                <div className="flex-grow flex gap-2 items-center">
+                                                    <input 
+                                                        type="text"
+                                                        value={editingPlan.name}
+                                                        onChange={(e) => setEditingPlan({...editingPlan, name: e.target.value})}
+                                                        className="w-full bg-slate-700 border border-slate-600 rounded-md px-2 py-0.5 text-sm"
+                                                    />
+                                                     <button onClick={handleUpdatePlanName} className="text-green-400 hover:text-white"><CheckIcon className="w-4 h-4"/></button>
+                                                     <button onClick={() => setEditingPlan(null)} className="text-slate-400 hover:text-white"><XIcon className="w-4 h-4"/></button>
+                                                </div>
+                                            ) : (
+                                                <p className="font-semibold text-slate-200">{plan.name}</p>
+                                            )}
+                                           
+                                            {editingPlan?.id !== plan.id && (
+                                                <div className="flex gap-2">
+                                                    <button onClick={() => setEditingPlan({id: plan.id, name: plan.name})} className="text-slate-400 hover:text-white"><PencilIcon className="w-4 h-4"/></button>
+                                                    <button onClick={() => handleDeletePlan(plan.id)} className="text-slate-400 hover:text-red-400"><TrashIcon className="w-4 h-4"/></button>
+                                                </div>
+                                            )}
+                                        </div>
+                                        <div className="space-y-2 text-xs">
+                                             {plan.steps.map(step => (
+                                                <div key={step.id} className="flex items-center gap-2 bg-slate-800 p-1.5 rounded-md">
+                                                    <span className="font-semibold text-slate-400">Day</span>
+                                                    <input 
+                                                        type="number"
+                                                        value={step.day}
+                                                        onChange={(e) => handleUpdateStep(plan.id, step.id, 'day', parseInt(e.target.value) || 0)}
+                                                        className="w-16 bg-slate-700 text-center rounded-md p-1"
+                                                    />
+                                                    <span className="font-semibold text-slate-400">Template:</span>
+                                                    <input 
+                                                        type="text"
+                                                        value={step.template}
+                                                        onChange={(e) => handleUpdateStep(plan.id, step.id, 'template', e.target.value)}
+                                                        className="w-full bg-slate-700 rounded-md p-1"
+                                                    />
+                                                    <button onClick={() => handleDeleteStep(plan.id, step.id)} className="text-slate-500 hover:text-red-400"><TrashIcon className="w-4 h-4"/></button>
+                                                </div>
+                                            ))}
+                                        </div>
+                                        <button onClick={() => handleAddStep(plan.id)} className="mt-2 flex items-center gap-1 text-blue-400 hover:text-blue-300 text-xs font-semibold">
+                                            <PlusIcon className="w-3 h-3"/> Add Step
+                                        </button>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    )}
+                    {activeTab === 'integrations' && (
+                        <div className="space-y-4">
+                            <h3 className="text-base font-semibold text-white">Connect your favorite tools to FazeAR.</h3>
+                            <div className="space-y-3">
+                                {settings.integrations.map(integration => (
+                                    <div key={integration.id} className="bg-slate-900/50 p-4 rounded-lg border border-slate-700 flex justify-between items-center">
+                                        <div className="flex items-center gap-3">
+                                            {integration.id === 'quickbooks' && <QuickBooksIcon className="w-8 h-8"/>}
+                                            {integration.id === 'stripe' && <StripeIcon className="w-8 h-8"/>}
+                                            {integration.id === 'gmail' && <GmailIcon className="w-8 h-8"/>}
+                                            <p className="font-semibold text-slate-200">{integration.name}</p>
+                                        </div>
+                                        <div className="flex items-center gap-3">
+                                            {integration.connected ? (
+                                                <span className="text-xs font-semibold text-green-400">Connected</span>
+                                            ) : (
+                                                 <span className="text-xs font-semibold text-slate-500">Not Connected</span>
+                                            )}
+                                            <label className="relative inline-flex items-center cursor-pointer">
+                                              <input 
+                                                type="checkbox" 
+                                                checked={integration.connected}
+                                                onChange={() => handleIntegrationToggle(integration.id)}
+                                                className="sr-only peer"
+                                              />
+                                              <div className="w-11 h-6 bg-slate-600 rounded-full peer peer-focus:ring-2 peer-focus:ring-blue-500 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                                            </label>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    )}
+                </div>
+
+                <div className="p-4 bg-slate-900/50 border-t border-slate-700 flex justify-end gap-2">
+                    <button onClick={onClose} className="bg-slate-700 hover:bg-slate-600 text-white font-semibold px-4 py-2 rounded-md text-sm transition-colors">
+                        Cancel
+                    </button>
+                     <button onClick={handleSaveChanges} className="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-4 py-2 rounded-md text-sm transition-colors">
+                        Save Changes
+                    </button>
+                </div>
+            </div>
         </div>
-        <div className="p-6 grid grid-cols-1 md:grid-cols-3 gap-6">
-          <div className="md:col-span-1">
-             <h3 className="text-md font-semibold text-white mb-2">Agent Settings</h3>
-             <p className="text-sm text-slate-400 mb-4">Control the agent's automated behaviors.</p>
-             <div className="bg-slate-700/50 p-3 rounded-lg">
-                <label htmlFor="autonomous-toggle" className="flex justify-between items-center cursor-pointer">
-                    <div>
-                        <span className={`font-semibold ${canControlAutonomy ? 'text-white' : 'text-slate-500'}`}>Autonomous Mode</span>
-                         <p className={`text-xs ${canControlAutonomy ? 'text-slate-400' : 'text-slate-500'}`}>Let the agent run daily checks automatically.</p>
-                    </div>
-                    <div className="relative">
-                        <input 
-                            id="autonomous-toggle" 
-                            type="checkbox" 
-                            className="sr-only peer"
-                            checked={isAutonomousMode}
-                            onChange={(e) => onSetAutonomousMode(e.target.checked)}
-                            disabled={!canControlAutonomy}
-                        />
-                        <div className="w-11 h-6 bg-slate-600 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600 peer-disabled:opacity-50"></div>
-                    </div>
-                </label>
-                {!canControlAutonomy && <p className="text-xs text-amber-400 mt-2">Only Managers and Admins can change this setting.</p>}
-             </div>
-             
-             <h3 className="text-md font-semibold text-white mb-2 mt-6">Dunning Plans</h3>
-             <p className="text-sm text-slate-400 mb-4">Manage communication sequences.</p>
-             <div className="space-y-2">
-                 {dunningPlans.map(plan => (
-                     <button
-                        key={plan.name}
-                        onClick={() => handleSelectPlan(plan.name)}
-                        className={`w-full text-left px-3 py-2 rounded-md text-sm font-medium transition-colors ${selectedPlan.name === plan.name ? 'bg-blue-600 text-white' : 'bg-slate-700 hover:bg-slate-600 text-slate-300'}`}
-                     >
-                        {plan.name}
-                     </button>
-                 ))}
-             </div>
-          </div>
-          <div className="md:col-span-2 bg-slate-900/50 p-4 rounded-lg border border-slate-700">
-              <h4 className="text-md font-semibold text-white mb-4">Steps for "{selectedPlan.name}" Plan</h4>
-              <div className="space-y-3">
-                  {selectedPlan.steps.map((step, index) => (
-                      <div key={index} className="flex items-center gap-4 p-3 bg-slate-800 rounded-md">
-                          <div className="text-center">
-                              <p className="font-bold text-lg text-white">{step.day}</p>
-                              <p className="text-xs text-slate-400">Day</p>
-                          </div>
-                          <div className="w-px bg-slate-600 self-stretch"></div>
-                          <div>
-                              <p className="font-semibold text-slate-200">{step.action === 'EMAIL' ? 'Send Email' : 'Make Call'}</p>
-                              <p className="text-sm text-slate-400">Template: {step.template}</p>
-                          </div>
-                      </div>
-                  ))}
-              </div>
-          </div>
-        </div>
-         <div className="p-4 bg-slate-900/50 border-t border-slate-700 text-right">
-            <button 
-                onClick={onClose}
-                className="bg-slate-700 hover:bg-slate-600 text-white font-semibold px-4 py-2 rounded-md text-sm transition-colors"
-            >
-                Close
-            </button>
-        </div>
-      </div>
-    </div>
-  );
+    );
 };

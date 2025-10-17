@@ -1,41 +1,100 @@
-import { GoogleGenAI, Type, GenerateContentResponse, Content } from "@google/genai";
-import { GEMINI_API_KEY } from '../apiKey.ts';
-import type { ChatMessage, Workflow, User } from '../types.ts';
+import { GoogleGenAI, Type, GenerateContentResponse, Content, FunctionDeclaration, FunctionCallPart } from "@google/genai";
+import type { ChatMessage, Workflow, User, ToolResponse } from '../types.ts';
 
 let ai: GoogleGenAI | null = null;
 
 // Singleton client getter to lazy-initialize the AI client
 const getAiClient = (): GoogleGenAI => {
     if (!ai) {
-        if (!GEMINI_API_KEY || GEMINI_API_KEY === "YOUR_API_KEY_HERE") {
-          // Remind the user to add their key if they haven't.
-          // This now throws an error when an API call is made, not on app load.
-          throw new Error("Please replace 'YOUR_API_KEY_HERE' with your actual Gemini API key in the apiKey.ts file.");
-        }
-        ai = new GoogleGenAI({ apiKey: GEMINI_API_KEY });
+        ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
     }
     return ai;
 }
 
-// This is a placeholder for a more complex chat implementation.
-// For the current app, the main usage is analyzeCashApplication.
-export const runChat = async (messages: ChatMessage[], workflows: Workflow[], users: User[]): Promise<GenerateContentResponse> => {
-  const client = getAiClient();
-  const lastUserMessage = messages[messages.length - 1].content || "";
-
-  // A very basic router for demonstration. A full implementation would use tools.
-  if (lastUserMessage.toLowerCase().includes('aging report')) {
-     const text = "The aging report is available in the Analytics tab.";
-     // Fix: Construct a valid GenerateContentResponse-like object for local handling.
-     return { text } as GenerateContentResponse;
+const tools: FunctionDeclaration[] = [
+  {
+    name: 'assign_workflow',
+    description: 'Assigns or reassigns a workflow to a specific collector. Use when the user asks to assign, reassign, or give a task to someone.',
+    parameters: {
+      type: Type.OBJECT,
+      properties: {
+        workflowIdentifier: {
+          type: Type.STRING,
+          description: "The client name or a unique invoice ID (e.g., 'inv_1234') of the workflow to assign."
+        },
+        assigneeName: {
+          type: Type.STRING,
+          description: "The full name of the collector to assign the workflow to (e.g., 'Sarah Lee')."
+        }
+      },
+      required: ['workflowIdentifier', 'assigneeName']
+    }
+  },
+  {
+    name: 'add_note_to_workflow',
+    description: "Adds a note or logs an activity to a specific workflow's audit trail. Use this to record information, updates, or actions taken.",
+    parameters: {
+      type: Type.OBJECT,
+      properties: {
+        workflowIdentifier: {
+          type: Type.STRING,
+          description: "The client name or a unique invoice ID (e.g., 'inv_1234') of the workflow to add the note to."
+        },
+        note: {
+          type: Type.STRING,
+          description: "The content of the note to add."
+        }
+      },
+      required: ['workflowIdentifier', 'note']
+    }
+  },
+  {
+    name: 'send_reminder',
+    description: "Sends a payment reminder for a specific workflow. This action logs that a reminder was sent in the workflow's audit trail.",
+    parameters: {
+      type: Type.OBJECT,
+      properties: {
+        workflowIdentifier: {
+          type: Type.STRING,
+          description: "The client name or a unique invoice ID (e.g., 'inv_1234') of the workflow to send a reminder for."
+        },
+      },
+      required: ['workflowIdentifier']
+    }
   }
+];
+
+export const runChat = async (messages: ChatMessage[]): Promise<GenerateContentResponse> => {
+  const client = getAiClient();
+  
+  const geminiHistory: Content[] = messages
+    .filter(m => !m.isThinking)
+    .map(msg => {
+        if (msg.role === 'user') {
+            return { role: 'user', parts: [{ text: msg.content || '' }] };
+        }
+        if (msg.role === 'model') {
+            if (msg.content) return { role: 'model', parts: [{ text: msg.content }] };
+            if (msg.toolCall) {
+                const { id, ...rest } = msg.toolCall;
+                return { role: 'model', parts: [{ functionCall: rest }]};
+            }
+        }
+        if (msg.role === 'tool') {
+            if (msg.toolResponse) {
+                const { id, ...rest } = msg.toolResponse;
+                return { role: 'tool', parts: [{ functionResponse: rest }] };
+            }
+        }
+        return null;
+    }).filter((m): m is Content => m !== null);
 
   const response = await client.models.generateContent({
     model: 'gemini-2.5-flash',
-    // Fix: Correctly map ChatMessage to Gemini's Content type, filtering out tool-related roles not directly sent.
-    contents: messages
-      .filter(m => m.role === 'user' || m.role === 'model')
-      .map(m => ({ role: m.role, parts: [{ text: m.content || "" }] }) as Content),
+    contents: geminiHistory,
+    config: {
+      tools: [{ functionDeclarations: tools }]
+    }
   });
 
   return response;
