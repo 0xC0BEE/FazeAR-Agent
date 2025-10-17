@@ -43,6 +43,19 @@ const App: React.FC = () => {
     const [viewingDispute, setViewingDispute] = useState<Workflow | null>(null);
 
     useEffect(() => {
+        // Check for client portal link first
+        const urlParams = new URLSearchParams(window.location.search);
+        const clientName = urlParams.get('client_name');
+        if (clientName) {
+            const clientUser = MOCK_USERS.find(u => u.role === 'Client' && u.clientName === clientName);
+            if (clientUser) {
+                setCurrentUser(clientUser);
+                // No API key needed for client portal view
+                setApiKey('CLIENT_PORTAL_MODE'); 
+                return;
+            }
+        }
+
         const storedKey = sessionStorage.getItem('gemini-api-key');
         if (storedKey) {
             setApiKey(storedKey);
@@ -50,7 +63,7 @@ const App: React.FC = () => {
     }, []);
 
     useEffect(() => {
-        if (apiKey) {
+        if (apiKey && apiKey !== 'CLIENT_PORTAL_MODE') {
             initializeAi(apiKey);
         }
     }, [apiKey]);

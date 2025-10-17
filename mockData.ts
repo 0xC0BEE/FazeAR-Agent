@@ -7,6 +7,7 @@ export const MOCK_USERS: User[] = [
   { id: 'user_3', name: 'Charlie (Collector)', role: 'Collector' },
   { id: 'user_4', name: 'Sarah Lee', role: 'Collector' },
   { id: 'user_5', name: 'John Smith (Client)', role: 'Client', clientName: 'Starlight Enterprises' },
+  { id: 'user_6', name: 'Apex Representative (Client)', role: 'Client', clientName: 'Apex Industries' },
 ];
 
 const formatDate = (date: Date) => date.toISOString().split('T')[0];

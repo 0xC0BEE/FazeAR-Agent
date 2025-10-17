@@ -11,6 +11,7 @@ import { ExclamationIcon } from './icons/ExclamationIcon.tsx';
 import { AuditTrailModal } from './AuditTrailModal.tsx';
 import { DocumentIcon } from './icons/DocumentIcon.tsx';
 import { PhoneIcon } from './icons/PhoneIcon.tsx';
+import { ShareIcon } from './icons/ShareIcon.tsx';
 
 type ActionTab = 'actions' | 'cash-app' | 'comms';
 
@@ -111,6 +112,16 @@ export const InspectorPanel: React.FC<InspectorPanelProps> = ({
       onAddNotification('success', 'Note added successfully.');
   }
   
+  const handleSharePortalLink = () => {
+    const portalUrl = `${window.location.origin}${window.location.pathname}?client_name=${encodeURIComponent(workflow.clientName)}`;
+    navigator.clipboard.writeText(portalUrl).then(() => {
+        onAddNotification('success', 'Client portal link copied to clipboard!');
+    }, (err) => {
+        console.error('Could not copy text: ', err);
+        onAddNotification('error', 'Failed to copy link.');
+    });
+  };
+
   return (
     <div className="flex flex-col h-full bg-slate-800/50 rounded-lg shadow-lg border border-slate-700">
       {/* Header */}
@@ -153,6 +164,9 @@ export const InspectorPanel: React.FC<InspectorPanelProps> = ({
                 <div className="space-y-2 pt-2 border-t border-slate-700/50">
                     <button onClick={() => onViewInvoice(workflow)} className="w-full flex items-center gap-2 bg-slate-700 hover:bg-slate-600 text-slate-300 font-semibold p-2 rounded-lg text-sm transition-colors">
                         <DocumentIcon className="w-5 h-5"/> View Invoice
+                    </button>
+                    <button onClick={handleSharePortalLink} className="w-full flex items-center gap-2 bg-slate-700 hover:bg-slate-600 text-slate-300 font-semibold p-2 rounded-lg text-sm transition-colors">
+                        <ShareIcon className="w-5 h-5"/> Share Portal Link
                     </button>
                     <button onClick={() => onInitiateCall(workflow)} className="w-full flex items-center gap-2 bg-green-600/20 border border-green-500/50 text-green-300 hover:bg-green-600/40 font-semibold p-2 rounded-lg text-sm transition-colors">
                         <PhoneIcon className="w-5 h-5"/> AI Live Call
