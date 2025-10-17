@@ -1,8 +1,16 @@
 import { GoogleGenAI, Type, GenerateContentResponse, Content, FunctionDeclaration } from "@google/genai";
 import type { ChatMessage } from '../types.ts';
 
-// Initialize the AI client at the top level for platform compatibility.
-const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+let ai: GoogleGenAI | null = null;
+
+export const initializeAiClient = (apiKey: string) => {
+    if (!apiKey) {
+        console.error("Attempted to initialize AI client without an API key.");
+        ai = null;
+        return;
+    }
+    ai = new GoogleGenAI({ apiKey });
+};
 
 const tools: FunctionDeclaration[] = [
   {
@@ -58,9 +66,12 @@ const tools: FunctionDeclaration[] = [
 ];
 
 export const runChat = async (messages: ChatMessage[]): Promise<GenerateContentResponse> => {
+  if (!ai) {
+    throw new Error("Gemini AI client is not initialized. Please set the API key.");
+  }
+
   const geminiHistory: Content[] = messages
     .filter(m => !m.isThinking)
-    // Fix: Add explicit 'Content | null' return type to the map function to satisfy the type predicate in the following filter.
     .map((msg): Content | null => {
         if (msg.role === 'user') {
             return { role: 'user', parts: [{ text: msg.content || '' }] };
@@ -92,12 +103,10 @@ export const runChat = async (messages: ChatMessage[]): Promise<GenerateContentR
   return response;
 };
 
-/**
- * Analyzes remittance text to extract structured payment data.
- * @param remittanceText - The unstructured text from a bank statement or email.
- * @returns A GenerateContentResponse containing the parsed data in its text property.
- */
 export const analyzeCashApplication = async (remittanceText: string): Promise<GenerateContentResponse> => {
+    if (!ai) {
+        throw new Error("Gemini AI client is not initialized. Please set the API key.");
+    }
     const prompt = `Analyze the following remittance text and extract the payment information into a structured JSON array. For each payment, provide the client's name, the invoice ID referenced, and the amount paid. Text: "${remittanceText}"`;
 
     const response = await ai.models.generateContent({

@@ -1,8 +1,5 @@
 {
   "name": "FazeAR: AI Accounts Receivable Agent",
   "description": "An AI-powered agent to automate accounts receivable workflows, including invoicing, payment processing, and client communication, inspired by the FazeAR concept.",
-  "requestFramePermissions": [],
-  "secrets": [
-    "API_KEY"
-  ]
+  "requestFramePermissions": []
 }

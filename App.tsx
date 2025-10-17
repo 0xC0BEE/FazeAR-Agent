@@ -2,16 +2,17 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { v4 as uuidv4 } from 'uuid';
 import type { User, Workflow, Settings, ChatMessage, DunningPlan, ToolCall, ToolResponse } from './types.ts';
 import { MOCK_USERS, MOCK_WORKFLOWS, MOCK_SETTINGS } from './mockData.ts';
-import { runChat } from './services/geminiService.ts';
+import { runChat, initializeAiClient } from './services/geminiService.ts';
 import { Header } from './components/Header.tsx';
 import { Dashboard } from './components/Dashboard.tsx';
 import { Analytics } from './components/Analytics.tsx';
 import { SettingsModal } from './components/SettingsModal.tsx';
 import { PaymentPortal } from './components/PaymentPortal.tsx';
-// Fix: Use FunctionCall type for tool calls from the Gemini API response, as FunctionCallPart is not exported.
+import { ApiKeyModal } from './components/ApiKeyModal.tsx';
 import type { FunctionCall } from '@google/genai';
 
 function App() {
+  const [isApiKeySet, setIsApiKeySet] = useState(false);
   const [users] = useState<User[]>(MOCK_USERS);
   const [currentUser, setCurrentUser] = useState<User>(MOCK_USERS[0]);
   const [workflows, setWorkflows] = useState<Workflow[]>(MOCK_WORKFLOWS);
@@ -26,6 +27,14 @@ function App() {
   const [scenarioWorkflows, setScenarioWorkflows] = useState<Workflow[] | null>(null);
   const [isGlobalAutonomous, setIsGlobalAutonomous] = useState(false);
   const [remittanceText, setRemittanceText] = useState('');
+
+  useEffect(() => {
+    const keyFromSession = sessionStorage.getItem('gemini-api-key');
+    if (keyFromSession) {
+        initializeAiClient(keyFromSession);
+        setIsApiKeySet(true);
+    }
+  }, []);
 
   const selectedWorkflow = workflows.find(w => w.id === selectedWorkflowId) || null;
   
@@ -79,9 +88,8 @@ function App() {
   useEffect(() => {
     let interval: number | undefined;
     if (isGlobalAutonomous) {
-      // Run immediately and then set interval
       runAutonomousAgentCycle();
-      interval = window.setInterval(runAutonomousAgentCycle, 15000); // Check every 15 seconds
+      interval = window.setInterval(runAutonomousAgentCycle, 15000); 
     }
     return () => {
       if (interval) {
@@ -154,7 +162,7 @@ function App() {
         amount: data.amount,
         dueDate: data.dueDate,
         status: new Date(data.dueDate) < new Date() ? 'Overdue' : 'In Progress',
-        assignee: 'Maria Garcia', // Default assignee
+        assignee: 'Maria Garcia', 
         auditTrail: [
             {
                 timestamp: new Date().toISOString(),
@@ -215,7 +223,6 @@ function App() {
     if (nameMatches.length === 0) return { error: `Could not find an active workflow for "${identifier}".`};
     if (nameMatches.length === 1) return nameMatches[0].id;
     
-    // Prioritize overdue if multiple active workflows exist for one client
     const overdueMatches = nameMatches.filter(w => w.status === 'Overdue');
     if (overdueMatches.length === 1) return overdueMatches[0].id;
 
@@ -225,7 +232,6 @@ function App() {
     };
   };
 
-  // Fix: The response from Gemini contains a FunctionCall object, not a FunctionCallPart.
   const executeToolCall = (toolCall: FunctionCall): ToolResponse['response'] => {
     const { name, args } = toolCall;
     const { workflowIdentifier, assigneeName, note } = args;
@@ -285,7 +291,6 @@ function App() {
         const functionCalls = response.functionCalls;
 
         if (functionCalls && functionCalls.length > 0) {
-            // For now, handle one function call at a time
             const toolCall = functionCalls[0];
             
             const toolCallMessage: ChatMessage = {
@@ -308,7 +313,6 @@ function App() {
                 }
             };
             
-            // Call API again with tool response to get final text
             const finalResponse = await runChat([...currentMessages, toolResponseMessage]);
             
             if(finalResponse.text) {
@@ -352,22 +356,33 @@ function App() {
               handleNewInvoice(data);
               break;
           case 'payment_received':
-              // Fix: Cast the `id` property from the `data` object to a string to match the expected type for `handlePaymentReceived`.
               handlePaymentReceived(data.id as string);
               break;
           case 'remittance_advice':
-              // Fix: Cast the `text` property from the `data` object to a string to match the expected type for the `setRemittanceText` state setter.
               setRemittanceText(data.text as string);
               break;
           default:
-              // Fix: Explicitly cast `type` to a string within the template literal to prevent potential type errors from strict linting rules.
               console.warn(`Unknown simulation event type: ${String(type)}`);
       }
+  };
+
+  const handleApiKeySave = (key: string) => {
+    if (!key.trim()) {
+        alert("API Key cannot be empty.");
+        return;
+    }
+    sessionStorage.setItem('gemini-api-key', key);
+    initializeAiClient(key);
+    setIsApiKeySet(true);
   };
 
   const clientWorkflows = currentUser.role === 'Client' 
       ? workflows.filter(w => w.clientName === currentUser.clientName)
       : [];
+      
+  if (!isApiKeySet) {
+    return <ApiKeyModal onSave={handleApiKeySave} />;
+  }
 
   return (
     <div className="bg-slate-900 text-slate-300 min-h-screen font-sans">
