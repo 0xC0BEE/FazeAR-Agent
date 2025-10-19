@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import type { Workflow, ChatMessage, User, Tone, Match } from '../types.ts';
+import type { Workflow, ChatMessage, User, Tone, Match, Settings } from '../types.ts';
 import { WorkflowTracker } from './WorkflowTracker.tsx';
 import { ChatInterface } from './ChatInterface.tsx';
 import { InspectorPanel } from './InspectorPanel.tsx';
@@ -9,6 +9,7 @@ interface DashboardProps {
     currentUser: User;
     messages: ChatMessage[];
     isLoading: boolean;
+    settings: Settings;
     onSendMessage: (input: string, tone: Tone) => void;
     onLogCommunication: (messageContent: string, workflow: Workflow) => void;
     onAnalyzeRemittance: (text: string) => Promise<Match[]>;
@@ -18,6 +19,8 @@ interface DashboardProps {
     onAddNotification: (type: 'agent' | 'success' | 'error' | 'info', message: string) => void;
     onViewInvoice: (workflow: Workflow) => void;
     onInitiateCall: (workflow: Workflow) => void;
+    pendingMatches: Match[] | null;
+    onClearPendingMatches: () => void;
 }
 
 export const Dashboard: React.FC<DashboardProps> = ({ 
@@ -25,6 +28,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
     currentUser,
     messages,
     isLoading,
+    settings,
     onSendMessage,
     onLogCommunication,
     onAnalyzeRemittance,
@@ -33,7 +37,9 @@ export const Dashboard: React.FC<DashboardProps> = ({
     onUpdateWorkflow,
     onAddNotification,
     onViewInvoice,
-    onInitiateCall
+    onInitiateCall,
+    pendingMatches,
+    onClearPendingMatches
 }) => {
     const [selectedWorkflowId, setSelectedWorkflowId] = useState<string | null>(null);
 
@@ -69,6 +75,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
                 <InspectorPanel
                     workflow={selectedWorkflow}
                     users={[]} // Note: Users prop is available if needed for assignee dropdowns
+                    settings={settings}
                     onAnalyzeRemittance={onAnalyzeRemittance}
                     onConfirmMatches={onConfirmMatches}
                     onDisputeWorkflow={onDisputeWorkflow}
@@ -76,6 +83,8 @@ export const Dashboard: React.FC<DashboardProps> = ({
                     onAddNotification={onAddNotification}
                     onViewInvoice={onViewInvoice}
                     onInitiateCall={onInitiateCall}
+                    pendingMatches={pendingMatches}
+                    onClearPendingMatches={onClearPendingMatches}
                 />
             </div>
         </div>

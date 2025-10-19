@@ -41,6 +41,7 @@ const App: React.FC = () => {
     const [viewingInvoice, setViewingInvoice] = useState<Workflow | null>(null);
     const [callingWorkflow, setCallingWorkflow] = useState<Workflow | null>(null);
     const [viewingDispute, setViewingDispute] = useState<Workflow | null>(null);
+    const [pendingMatches, setPendingMatches] = useState<Match[] | null>(null);
 
     useEffect(() => {
         // Check for client portal link first
@@ -362,12 +363,28 @@ const App: React.FC = () => {
         setApiKey(key);
     };
 
+    const handleAutomatedRemittanceAnalysis = async (text: string) => {
+        addNotification('agent', `Agent detected new remittance advice and is analyzing it...`);
+        try {
+            const matches = await analyzeRemittanceAdvice(text, workflows);
+            if (matches && matches.length > 0) {
+                setPendingMatches(matches);
+                addNotification('success', `Agent found ${matches.length} potential payment matches. Review them in the 'Cash App' panel.`);
+            } else {
+                addNotification('info', `Agent analyzed remittance advice but found no matches.`);
+            }
+        } catch (error) {
+            console.error('Error during automated remittance analysis:', error);
+            addNotification('error', 'Agent failed to analyze remittance advice.');
+        }
+    };
+
     const handleSimulatedEvent = (type: string, data: any) => {
         const eventTitle = type.split('_').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
-        addNotification('info', `Simulated Event: ${eventTitle}`);
         
         switch (type) {
             case 'new_invoice':
+                addNotification('info', `Simulated Event: ${eventTitle}`);
                 const newWorkflow: Workflow = {
                     id: uuidv4(),
                     clientName: data.clientName,
@@ -389,6 +406,7 @@ const App: React.FC = () => {
                 setWorkflows(prev => [newWorkflow, ...prev]);
                 break;
             case 'payment_received':
+                addNotification('info', `Simulated Event: ${eventTitle}`);
                  const newAuditEntry = {
                     timestamp: new Date().toISOString(),
                     activity: 'Payment Received',
@@ -397,7 +415,7 @@ const App: React.FC = () => {
                 setWorkflows(prev => prev.map(w => w.id === data.id ? { ...w, status: 'Completed', paymentDate: new Date().toISOString(), auditTrail: [...w.auditTrail, newAuditEntry] } : w));
                 break;
             case 'remittance_advice':
-                addNotification('agent', `Agent detected new remittance advice. Go to the 'Cash App' panel on the dashboard to process it.`);
+                handleAutomatedRemittanceAnalysis(data.text);
                 break;
         }
     };
@@ -418,6 +436,7 @@ const App: React.FC = () => {
                     currentUser={currentUser}
                     messages={chatMessages}
                     isLoading={isChatLoading}
+                    settings={settings}
                     onSendMessage={handleSendMessage}
                     onLogCommunication={handleLogCommunication}
                     onAnalyzeRemittance={handleAnalyzeRemittance}
@@ -427,6 +446,8 @@ const App: React.FC = () => {
                     onAddNotification={addNotification}
                     onViewInvoice={(workflow) => setViewingInvoice(workflow)}
                     onInitiateCall={(workflow) => setCallingWorkflow(workflow)}
+                    pendingMatches={pendingMatches}
+                    onClearPendingMatches={() => setPendingMatches(null)}
                 />
             case 'analytics':
                 return <Analytics 
@@ -456,6 +477,7 @@ const App: React.FC = () => {
                      currentUser={currentUser}
                      messages={chatMessages}
                      isLoading={isChatLoading}
+                     settings={settings}
                      onSendMessage={handleSendMessage}
                      onLogCommunication={handleLogCommunication}
                      onAnalyzeRemittance={handleAnalyzeRemittance}
@@ -465,12 +487,14 @@ const App: React.FC = () => {
                      onAddNotification={addNotification}
                      onViewInvoice={(workflow) => setViewingInvoice(workflow)}
                      onInitiateCall={(workflow) => setCallingWorkflow(workflow)}
+                     pendingMatches={pendingMatches}
+                     onClearPendingMatches={() => setPendingMatches(null)}
                  />;
         }
     }
 
     return (
-        <div className="bg-slate-900 text-slate-300 font-sans h-screen flex flex-col">
+        <div className="bg-background text-foreground h-screen flex flex-col">
             <div className="flex-shrink-0 p-4 sm:p-6 lg:p-8 pb-0">
                  <Header 
                     onOpenSettings={() => setIsSettingsOpen(true)}

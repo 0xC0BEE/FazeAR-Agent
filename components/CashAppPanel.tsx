@@ -1,6 +1,7 @@
 import React from 'react';
 import { UploadIcon } from './icons/UploadIcon';
 import { SpinnerIcon } from './icons/SpinnerIcon';
+import type { Match } from '../types.ts';
 
 interface CashAppPanelProps {
   remittanceText: string;
@@ -8,6 +9,8 @@ interface CashAppPanelProps {
   onAnalyze: (text: string) => void;
   isLoading: boolean;
   onSimulate: () => void;
+  pendingMatches: Match[] | null;
+  onShowPendingMatches: () => void;
 }
 
 export const CashAppPanel: React.FC<CashAppPanelProps> = ({ 
@@ -15,7 +18,9 @@ export const CashAppPanel: React.FC<CashAppPanelProps> = ({
     onSetRemittanceText, 
     onAnalyze, 
     isLoading, 
-    onSimulate 
+    onSimulate,
+    pendingMatches,
+    onShowPendingMatches
 }) => {
 
     const handleAnalyze = () => {
@@ -26,6 +31,17 @@ export const CashAppPanel: React.FC<CashAppPanelProps> = ({
     
     return (
         <div className="flex flex-col h-full p-4">
+            {pendingMatches && (
+                <div className="bg-purple-900/50 border border-purple-700 rounded-lg p-3 text-center mb-4">
+                    <p className="text-sm font-semibold text-purple-200 mb-2">The AI agent has analyzed a remittance advice email.</p>
+                    <button 
+                        onClick={onShowPendingMatches}
+                        className="bg-purple-600 hover:bg-purple-700 text-white font-semibold px-3 py-1.5 rounded-md text-xs"
+                    >
+                        Review {pendingMatches.length} Suggested Matches
+                    </button>
+                </div>
+            )}
             <h3 className="text-base font-semibold text-white mb-2">Cash Application AI</h3>
             <p className="text-sm text-slate-400 mb-4">Paste remittance advice from an email or bank statement to automatically match payments to invoices.</p>
             <textarea

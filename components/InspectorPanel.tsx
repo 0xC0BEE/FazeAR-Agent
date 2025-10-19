@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import type { Workflow, User, Communication, AuditLogEntry, Match } from '../types.ts';
+import type { Workflow, User, Communication, AuditLogEntry, Match, Settings } from '../types.ts';
 import { NoteIcon } from './icons/NoteIcon.tsx';
 import { BotIcon } from './icons/BotIcon.tsx';
 import { ClipboardListIcon } from './icons/ClipboardListIcon.tsx';
@@ -18,6 +18,7 @@ type ActionTab = 'actions' | 'cash-app' | 'comms';
 interface InspectorPanelProps {
   workflow: Workflow | null;
   users: User[];
+  settings: Settings;
   onAnalyzeRemittance: (text: string) => Promise<Match[]>;
   onConfirmMatches: (matches: Match[]) => void;
   onDisputeWorkflow: (workflowId: string, reason: string) => void;
@@ -25,17 +26,22 @@ interface InspectorPanelProps {
   onAddNotification: (type: 'agent' | 'success' | 'error' | 'info', message: string) => void;
   onViewInvoice: (workflow: Workflow) => void;
   onInitiateCall: (workflow: Workflow) => void;
+  pendingMatches: Match[] | null;
+  onClearPendingMatches: () => void;
 }
 
 export const InspectorPanel: React.FC<InspectorPanelProps> = ({ 
     workflow, 
+    settings,
     onAnalyzeRemittance, 
     onConfirmMatches, 
     onDisputeWorkflow, 
     onUpdateWorkflow, 
     onAddNotification,
     onViewInvoice,
-    onInitiateCall
+    onInitiateCall,
+    pendingMatches,
+    onClearPendingMatches
 }) => {
   const [actionTab, setActionTab] = useState<ActionTab>('actions');
   const [isAuditModalOpen, setAuditModalOpen] = useState(false);
@@ -57,6 +63,21 @@ export const InspectorPanel: React.FC<InspectorPanelProps> = ({
         <ClipboardListIcon className="w-12 h-12 text-slate-600 mb-4" />
         <h3 className="font-semibold text-white">Inspector Panel</h3>
         <p className="text-sm text-slate-400">Select a workflow from the tracker to view its details and take action.</p>
+         {pendingMatches && (
+            <div className="mt-6 bg-purple-900/50 border border-purple-700 rounded-lg p-3 text-center w-full">
+                <p className="text-sm font-semibold text-purple-200 mb-2">The AI agent has analyzed a remittance advice email.</p>
+                <button 
+                    onClick={() => {
+                        setMatches(pendingMatches);
+                        setConfirmModalOpen(true);
+                        onClearPendingMatches();
+                    }}
+                    className="bg-purple-600 hover:bg-purple-700 text-white font-semibold px-3 py-1.5 rounded-md text-xs"
+                >
+                    Review {pendingMatches.length} Suggested Matches
+                </button>
+            </div>
+        )}
       </div>
     );
   }
@@ -84,6 +105,14 @@ export const InspectorPanel: React.FC<InspectorPanelProps> = ({
     }
   };
 
+  const handleShowPendingMatches = () => {
+    if (pendingMatches) {
+        setMatches(pendingMatches);
+        setConfirmModalOpen(true);
+        onClearPendingMatches();
+    }
+  };
+
   const handleConfirmAndClose = (confirmedMatches: Match[]) => {
     onConfirmMatches(confirmedMatches);
     setConfirmModalOpen(false);
@@ -92,12 +121,26 @@ export const InspectorPanel: React.FC<InspectorPanelProps> = ({
   };
   
   const handleSendCommunication = (commId: string) => {
-    onUpdateWorkflow(prev => prev.map(w => {
-      if (w.id !== workflow.id) return w;
-      const updatedComms = w.communications.map(c => c.id === commId ? { ...c, status: 'Sent' as const } : c);
-      return { ...w, communications: updatedComms };
-    }));
-    onAddNotification('success', 'Email has been marked as sent.');
+    const isGmailConnected = settings.integrations.find(i => i.id === 'gmail')?.connected;
+
+    if (isGmailConnected) {
+        onUpdateWorkflow(prev => prev.map(w => {
+            if (w.id !== workflow.id) return w;
+            
+            const comm = w.communications.find(c => c.id === commId);
+            const updatedComms = w.communications.map(c => c.id === commId ? { ...c, status: 'Sent' as const } : c);
+            const newAuditEntry = {
+                timestamp: new Date().toISOString(),
+                activity: 'Email Sent via Gmail',
+                details: `Sent "${comm?.subject}" to ${comm?.recipient}.`,
+            };
+            return { ...w, communications: updatedComms, auditTrail: [...w.auditTrail, newAuditEntry] };
+        }));
+        const comm = workflow.communications.find(c => c.id === commId);
+        onAddNotification('success', `Email sent to ${comm?.recipient} via Gmail.`);
+    } else {
+        onAddNotification('info', 'Please connect Gmail in the Integrations Hub to send emails.');
+    }
   };
 
   const handleAddNote = () => {
@@ -223,6 +266,8 @@ export const InspectorPanel: React.FC<InspectorPanelProps> = ({
                 onAnalyze={handleAnalyze}
                 isLoading={isLoading}
                 onSimulate={handleSimulateRemittance}
+                pendingMatches={pendingMatches}
+                onShowPendingMatches={handleShowPendingMatches}
            />
         )}
       </div>

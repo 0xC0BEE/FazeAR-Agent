@@ -56,5 +56,5 @@ This document outlines the phased development plan for the FazeAR project.
     - [ ] Allow clients to log in and not only pay but also view their entire invoice history.
     - [x] Enable clients to initiate a dispute directly from the portal, providing a reason and documentation.
   - [ ] **Email Integration (Gmail API):**
-    - [ ] Allow the agent to send drafted communications directly from the user's connected email account.
+    - [x] Allow the agent to send drafted communications directly from the user's connected email account.
     - [ ] Automatically scan the connected inbox for incoming emails that look like remittance advice and flag them for the Cash Application tool.
