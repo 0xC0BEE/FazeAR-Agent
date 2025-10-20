@@ -1,6 +1,6 @@
-import React from 'react';
-// Fix: Corrected import path for types.ts to be explicit.
+import React, { useMemo } from 'react';
 import type { Workflow } from '../types.ts';
+import { Button } from './ui/Button.tsx';
 import { XIcon } from './icons/XIcon.tsx';
 
 interface CashFlowChartProps {
@@ -9,107 +9,104 @@ interface CashFlowChartProps {
   onClearScenario: () => void;
 }
 
-const getMonthName = (monthIndex: number) => {
-  const date = new Date();
-  date.setMonth(monthIndex);
-  return date.toLocaleString('default', { month: 'short' });
-};
+const getMonthlyData = (workflows: Workflow[], scenarioWorkflows: Workflow[] | null) => {
+    const today = new Date();
+    const months: { name: string; actual: number; scenario: number }[] = [];
+  
+    for (let i = -2; i <= 3; i++) {
+      const date = new Date(today.getFullYear(), today.getMonth() + i, 1);
+      months.push({
+        name: date.toLocaleString('default', { month: 'short' }),
+        actual: 0,
+        scenario: 0,
+      });
+    }
 
-const calculateForecast = (workflows: Workflow[], currentMonth: number, currentYear: number) => {
-    const forecastData = [
-        { month: getMonthName(currentMonth), amount: 0 },
-        { month: getMonthName(currentMonth + 1), amount: 0 },
-        { month: getMonthName(currentMonth + 2), amount: 0 },
-    ];
-
-    workflows.forEach(w => {
-        if (w.status !== 'Completed') {
-            const dueDate = new Date(w.dueDate);
-            // Adjust for timezone to avoid off-by-one day errors
-            const dueMonth = dueDate.getUTCMonth();
-            const dueYear = dueDate.getUTCFullYear();
-            
-            let monthDiff = (dueYear - currentYear) * 12 + (dueMonth - currentMonth);
-
-            if (monthDiff >= 0 && monthDiff < 3) {
-                 forecastData[monthDiff].amount += w.amount;
+    const processWorkflows = (data: Workflow[], key: 'actual' | 'scenario') => {
+        data.forEach(w => {
+            if (w.status === 'Completed' && w.paymentDate) {
+                const paymentDate = new Date(w.paymentDate);
+                const monthIndex = paymentDate.getMonth() - today.getMonth() + 2 + (paymentDate.getFullYear() - today.getFullYear()) * 12;
+                if (monthIndex >= 0 && monthIndex < months.length) {
+                    months[monthIndex][key] += w.amount;
+                }
+            } else { // Forecasted for open invoices
+                const dueDate = new Date(w.dueDate);
+                const monthIndex = dueDate.getMonth() - today.getMonth() + 2 + (dueDate.getFullYear() - today.getFullYear()) * 12;
+                 if (monthIndex >= 0 && monthIndex < months.length) {
+                    months[monthIndex][key] += w.amount;
+                }
             }
-        }
-    });
-
-    return forecastData;
+        });
+    }
+    
+    processWorkflows(workflows, 'actual');
+    if (scenarioWorkflows) {
+        processWorkflows(scenarioWorkflows, 'scenario');
+    } else {
+        processWorkflows(workflows, 'scenario');
+    }
+  
+    return months;
 };
+
 
 export const CashFlowChart: React.FC<CashFlowChartProps> = ({ workflows, scenarioWorkflows, onClearScenario }) => {
-  const today = new Date();
-  const currentMonth = today.getMonth();
-  const currentYear = today.getFullYear();
 
-  const baseForecast = calculateForecast(workflows, currentMonth, currentYear);
-  const scenarioForecast = scenarioWorkflows ? calculateForecast(scenarioWorkflows, currentMonth, currentYear) : null;
+  const combinedData = useMemo(() => getMonthlyData(workflows, scenarioWorkflows), [workflows, scenarioWorkflows]);
 
-  const allAmounts = [...baseForecast.map(d => d.amount)];
-  if (scenarioForecast) {
-    allAmounts.push(...scenarioForecast.map(d => d.amount));
-  }
-  const maxAmount = Math.max(...allAmounts, 1); // Avoid division by zero
+  const maxValue = useMemo(() => {
+    return Math.max(...combinedData.map(d => Math.max(d.actual, d.scenario)));
+  }, [combinedData]);
 
   return (
-    <div className="bg-slate-800 rounded-lg shadow-lg p-4 md:p-6 border border-slate-700">
-      <div className="flex justify-between items-center mb-4">
-        <h3 className="text-lg font-semibold text-white">90-Day Cash Flow Forecast</h3>
-        <div className="flex items-center gap-4 text-xs">
-            <div className="flex items-center gap-1.5">
-                <div className="w-3 h-3 rounded-sm bg-blue-500"></div>
-                <span>Current</span>
-            </div>
-            {scenarioForecast && (
-                <div className="flex items-center gap-1.5">
-                    <div className="w-3 h-3 rounded-sm bg-purple-500"></div>
-                    <span>Scenario</span>
-                </div>
-            )}
+    <div className="bg-card rounded-lg shadow-lg p-4 md:p-6 border">
+      <div className="flex justify-between items-start mb-4">
+        <div>
+          <h3 className="text-lg font-semibold text-card-foreground">Cash Flow Forecast</h3>
+          <p className="text-sm text-muted-foreground">Actual vs. Projected Incoming Cash (next 3 months)</p>
         </div>
+         {scenarioWorkflows && (
+          <Button onClick={onClearScenario} size="sm" variant="ghost" className="gap-1.5 text-xs">
+            <XIcon className="w-4 h-4"/>
+            Clear Scenario
+          </Button>
+        )}
       </div>
-       {scenarioWorkflows && (
-          <div className="bg-purple-900/50 border border-purple-700 rounded-lg p-3 flex justify-between items-center mb-4 text-sm">
-              <p className="font-semibold text-purple-200">Showing "What-If" Scenario</p>
-              <button 
-                onClick={onClearScenario}
-                className="flex items-center gap-1 text-xs font-semibold text-purple-200 hover:text-white bg-purple-800/50 hover:bg-purple-700 px-2 py-1 h-auto rounded-md"
-              >
-                <XIcon className="w-3 h-3" />
-                Clear
-              </button>
-          </div>
-      )}
-      <div className="flex justify-between items-end h-48 space-x-4">
-        {baseForecast.map((data, index) => (
-          <div key={index} className="flex flex-col items-center flex-1 h-full justify-end">
-             <div className="flex items-center gap-1 text-sm font-bold text-white mb-1">
-                <span>${data.amount.toLocaleString()}</span>
-                {scenarioForecast && data.amount !== scenarioForecast[index].amount && (
-                    <span className="text-purple-400">(${scenarioForecast[index].amount.toLocaleString()})</span>
-                )}
+
+      <div className="h-64 w-full flex justify-around items-end gap-4 pr-4">
+        {combinedData.map((entry, index) => (
+          <div key={index} className="flex-1 flex flex-col items-center h-full">
+            <div className="flex-1 flex items-end justify-center w-full gap-2">
+                <div className="w-1/2 h-full flex items-end">
+                    <div 
+                        className="w-full bg-primary rounded-t-sm"
+                        style={{ height: `${(entry.actual / Math.max(maxValue, 1)) * 100}%` }}
+                        title={`Actual: $${entry.actual.toLocaleString()}`}
+                    ></div>
+                </div>
+                 <div className="w-1/2 h-full flex items-end">
+                    <div 
+                        className={`w-full bg-secondary rounded-t-sm transition-all duration-300 ${scenarioWorkflows ? '' : 'opacity-0'}`}
+                        style={{ height: `${(entry.scenario / Math.max(maxValue, 1)) * 100}%` }}
+                        title={`Scenario: $${entry.scenario.toLocaleString()}`}
+                    ></div>
+                </div>
             </div>
-            <div className="w-full flex items-end gap-1 h-full">
-              <div
-                className="w-full bg-blue-500 rounded-t-md hover:bg-blue-400 transition-all"
-                style={{ height: `${(data.amount / maxAmount) * 100}%` }}
-                title={`Current: $${data.amount.toLocaleString()}`}
-              ></div>
-              {scenarioForecast && (
-                 <div
-                    className="w-full bg-purple-500 rounded-t-md hover:bg-purple-400 transition-all"
-                    style={{ height: `${(scenarioForecast[index].amount / maxAmount) * 100}%` }}
-                    title={`Scenario: $${scenarioForecast[index].amount.toLocaleString()}`}
-                 ></div>
-              )}
-            </div>
-            <div className="text-xs text-slate-400 mt-2">{data.month}</div>
+            <div className="text-xs text-muted-foreground mt-2">{entry.name}</div>
           </div>
         ))}
       </div>
+       <div className="mt-4 flex justify-center items-center gap-6 text-sm">
+            <div className="flex items-center gap-2">
+                <div className="w-3 h-3 rounded-sm bg-primary"></div>
+                <span>Actual/Forecast</span>
+            </div>
+             <div className={`flex items-center gap-2 transition-opacity ${scenarioWorkflows ? 'opacity-100' : 'opacity-50'}`}>
+                <div className="w-3 h-3 rounded-sm bg-secondary"></div>
+                <span>'What-If' Scenario</span>
+            </div>
+        </div>
     </div>
   );
 };

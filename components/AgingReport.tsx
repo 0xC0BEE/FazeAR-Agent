@@ -1,7 +1,14 @@
-
 import React from 'react';
-// Fix: Corrected import path for types.ts to be explicit.
 import type { Workflow } from '../types.ts';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableFooter,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "./ui/Table.tsx";
 
 interface AgingReportProps {
     workflows: Workflow[];
@@ -54,47 +61,47 @@ export const AgingReport: React.FC<AgingReportProps> = ({ workflows }) => {
     });
 
     return (
-        <div className="bg-slate-800 rounded-lg shadow-lg p-4 md:p-6 border border-slate-700">
-            <h3 className="text-lg font-semibold text-white mb-4">Invoice Aging Report</h3>
+        <div className="bg-card rounded-lg shadow-lg p-4 md:p-6 border">
+            <h3 className="text-lg font-semibold text-card-foreground mb-4">Invoice Aging Report</h3>
             <div className="overflow-x-auto">
-                <table className="w-full text-sm text-left text-slate-300">
-                    <thead className="text-xs text-slate-400 uppercase bg-slate-700/50">
-                        <tr>
-                            <th scope="col" className="px-6 py-3">Aging Bucket</th>
-                            <th scope="col" className="px-6 py-3 text-right"># Invoices</th>
-                            <th scope="col" className="px-6 py-3 text-right">Amount</th>
-                            <th scope="col" className="px-6 py-3 text-right">% of Total AR</th>
-                            <th scope="col" className="px-6 py-3 min-w-[150px]">Distribution</th>
-                        </tr>
-                    </thead>
-                    <tbody>
+                <Table>
+                    <TableHeader>
+                        <TableRow>
+                            <TableHead>Aging Bucket</TableHead>
+                            <TableHead className="text-right"># Invoices</TableHead>
+                            <TableHead className="text-right">Amount</TableHead>
+                            <TableHead className="text-right">% of Total AR</TableHead>
+                            <TableHead className="min-w-[150px]">Distribution</TableHead>
+                        </TableRow>
+                    </TableHeader>
+                    <TableBody>
                         {buckets.map((bucket, index) => {
                             const percentage = totalReceivable > 0 ? (bucket.amount / totalReceivable) * 100 : 0;
                             return (
-                                <tr key={index} className="bg-slate-800 border-b border-slate-700 hover:bg-slate-700/50">
-                                    <td className="px-6 py-4 font-semibold text-white whitespace-nowrap">{bucket.label}</td>
-                                    <td className="px-6 py-4 text-right">{bucket.count}</td>
-                                    <td className="px-6 py-4 text-right font-mono">${bucket.amount.toLocaleString()}</td>
-                                    <td className="px-6 py-4 text-right font-mono">{percentage.toFixed(1)}%</td>
-                                    <td className="px-6 py-4">
-                                        <div className="w-full bg-slate-700 rounded-full h-2.5">
-                                            <div className="bg-blue-500 h-2.5 rounded-full" style={{ width: `${percentage}%` }}></div>
+                                <TableRow key={index}>
+                                    <TableCell className="font-medium">{bucket.label}</TableCell>
+                                    <TableCell className="text-right">{bucket.count}</TableCell>
+                                    <TableCell className="text-right font-mono">${bucket.amount.toLocaleString()}</TableCell>
+                                    <TableCell className="text-right font-mono">{percentage.toFixed(1)}%</TableCell>
+                                    <TableCell>
+                                        <div className="w-full bg-muted rounded-full h-2.5">
+                                            <div className="bg-primary h-2.5 rounded-full" style={{ width: `${percentage}%` }}></div>
                                         </div>
-                                    </td>
-                                </tr>
+                                    </TableCell>
+                                </TableRow>
                             );
                         })}
-                    </tbody>
-                     <tfoot className="font-semibold text-white">
-                        <tr className="border-t-2 border-slate-600">
-                            <td className="px-6 py-3">Total</td>
-                            <td className="px-6 py-3 text-right">{outstandingWorkflows.length}</td>
-                            <td className="px-6 py-3 text-right font-mono">${totalReceivable.toLocaleString()}</td>
-                            <td className="px-6 py-3 text-right font-mono">100.0%</td>
-                            <td className="px-6 py-3"></td>
-                        </tr>
-                    </tfoot>
-                </table>
+                    </TableBody>
+                     <TableFooter>
+                        <TableRow>
+                            <TableCell>Total</TableCell>
+                            <TableCell className="text-right">{outstandingWorkflows.length}</TableCell>
+                            <TableCell className="text-right font-mono">${totalReceivable.toLocaleString()}</TableCell>
+                            <TableCell className="text-right font-mono">100.0%</TableCell>
+                            <TableCell></TableCell>
+                        </TableRow>
+                    </TableFooter>
+                </Table>
             </div>
         </div>
     );

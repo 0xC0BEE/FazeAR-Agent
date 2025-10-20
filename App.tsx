@@ -1,3 +1,6 @@
+
+
+
 import React, { useState, useEffect } from 'react';
 import { v4 as uuidv4 } from 'uuid';
 import { Header } from './components/Header.tsx';
@@ -5,7 +8,8 @@ import { Dashboard } from './components/Dashboard.tsx';
 import { SettingsModal } from './components/SettingsModal.tsx';
 import { NotificationToaster } from './components/NotificationToaster.tsx';
 import { MOCK_USERS, MOCK_WORKFLOWS, MOCK_SETTINGS } from './mockData.ts';
-import type { User, Workflow, ChatMessage, Settings, Notification as NotificationType, Tone, Match, DisputeStatus } from './types.ts';
+// Fix: Import the centralized 'View' type.
+import type { User, Workflow, ChatMessage, Settings, Notification as NotificationType, Tone, Match, DisputeStatus, View } from './types.ts';
 import { generateChatResponse, analyzeRemittanceAdvice, runAnalyticsQuery, generateWhatIfScenario, initializeAi } from './services/geminiService.ts';
 import { Analytics } from './components/Analytics.tsx';
 import { IntegrationsHub } from './components/IntegrationsHub.tsx';
@@ -18,7 +22,7 @@ import { LiveCallModal } from './components/LiveCallModal.tsx';
 import { DisputeDetailModal } from './components/DisputeDetailModal.tsx';
 
 
-type View = 'dashboard' | 'analytics' | 'integrations' | 'portal' | 'knowledge' | 'disputes';
+// Fix: Removed local 'View' type definition. It's now imported from types.ts.
 
 const App: React.FC = () => {
     const [apiKey, setApiKey] = useState<string | null>(null);
@@ -448,6 +452,8 @@ const App: React.FC = () => {
                     onInitiateCall={(workflow) => setCallingWorkflow(workflow)}
                     pendingMatches={pendingMatches}
                     onClearPendingMatches={() => setPendingMatches(null)}
+                    // Fix: Pass users prop to Dashboard component.
+                    users={users}
                 />
             case 'analytics':
                 return <Analytics 
@@ -489,13 +495,15 @@ const App: React.FC = () => {
                      onInitiateCall={(workflow) => setCallingWorkflow(workflow)}
                      pendingMatches={pendingMatches}
                      onClearPendingMatches={() => setPendingMatches(null)}
+                     // Fix: Pass users prop to Dashboard component.
+                     users={users}
                  />;
         }
     }
 
     return (
         <div className="bg-background text-foreground h-screen flex flex-col">
-            <div className="flex-shrink-0 p-4 sm:p-6 lg:p-8 pb-0">
+            <header className="flex-shrink-0 p-4 sm:p-6 lg:p-8 pb-0">
                  <Header 
                     onOpenSettings={() => setIsSettingsOpen(true)}
                     currentView={view}
@@ -506,9 +514,9 @@ const App: React.FC = () => {
                     isGlobalAutonomous={isGlobalAutonomous}
                     onSetGlobalAutonomous={setGlobalAutonomous}
                 />
-            </div>
-            <main className="flex-1 overflow-hidden p-4 sm:p-6 lg:p-8 pt-6">
-                <div className="max-w-screen-2xl mx-auto h-full">
+            </header>
+            <main className="flex-1 p-4 sm:p-6 lg:p-8 pt-6 overflow-hidden flex flex-col">
+                <div className="max-w-screen-2xl mx-auto w-full flex-1">
                     {currentView()}
                 </div>
             </main>

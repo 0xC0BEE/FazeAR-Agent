@@ -1,11 +1,9 @@
-
 import React, { useState } from 'react';
-// Fix: Corrected import path for types.ts to be explicit.
 import type { Workflow } from '../types.ts';
 import { WebhookIcon } from './icons/WebhookIcon.tsx';
 import { v4 as uuidv4 } from 'uuid';
-// Fix: Corrected import path for mockData.ts to be explicit.
 import { MOCK_REMITTANCE_ADVICE } from '../mockData.ts';
+import { Button } from './ui/Button.tsx';
 
 interface WebhookListenerProps {
   workflows: Workflow[];
@@ -59,28 +57,27 @@ export const WebhookListener: React.FC<WebhookListenerProps> = ({ workflows, onS
 
 
     return (
-        <div className="bg-slate-800 rounded-lg shadow-lg p-4 flex flex-col items-center text-center border border-slate-700">
-            <WebhookIcon className="w-8 h-8 text-purple-400 mb-2" />
-            <h3 className="font-semibold text-white mb-1">Webhook Listener</h3>
-            <p className="text-xs text-slate-400 mb-4">Simulate external events from your connected services.</p>
+        <div className="bg-card rounded-lg shadow-lg p-4 flex flex-col items-center text-center border">
+            <WebhookIcon className="w-8 h-8 text-primary mb-2" />
+            <h3 className="font-semibold text-card-foreground mb-1">Webhook Listener</h3>
+            <p className="text-xs text-muted-foreground mb-4">Simulate external events from your connected services.</p>
             <div className="w-full flex gap-2">
                 <select 
                     value={selectedScenario}
                     onChange={(e) => setSelectedScenario(e.target.value)}
-                    className="w-full bg-slate-700 border border-slate-600 rounded-lg px-3 py-1.5 text-xs font-semibold text-slate-300 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background"
                 >
                     <option value="" disabled>Select a scenario...</option>
                     <option value="remittance:email">Complex Remittance Advice (Email)</option>
                     {inProgressWorkflow && <option value={`invoice:${inProgressWorkflow.clientName}`}>New Invoice: {inProgressWorkflow.clientName}</option>}
                     {overdueWorkflow && <option value={`payment:${overdueWorkflow.externalId}`}>Payment Received: {overdueWorkflow.clientName} ({overdueWorkflow.externalId})</option>}
                 </select>
-                <button
+                <Button
                     onClick={handleSimulate}
                     disabled={!selectedScenario}
-                    className="w-auto bg-purple-600 hover:bg-purple-700 text-white font-semibold px-3 py-1.5 rounded-md text-xs transition-colors disabled:bg-slate-600 disabled:cursor-not-allowed"
                 >
                     Simulate
-                </button>
+                </Button>
             </div>
         </div>
     );

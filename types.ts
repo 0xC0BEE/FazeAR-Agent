@@ -1,6 +1,9 @@
 // Fix: Re-implemented the full types.ts to resolve widespread module and type errors.
 export type Tone = 'Default' | 'Friendly' | 'Formal' | 'Firm';
 
+// Fix: Add a centralized 'View' type to resolve type conflicts.
+export type View = 'dashboard' | 'analytics' | 'integrations' | 'portal' | 'knowledge' | 'disputes';
+
 export type Role = 'Admin' | 'Manager' | 'Collector' | 'Client';
 
 export interface User {

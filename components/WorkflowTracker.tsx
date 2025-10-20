@@ -1,5 +1,4 @@
 import React, { useState, useRef, useEffect } from 'react';
-// Fix: Corrected import path for types.ts to be explicit.
 import type { Workflow, User } from '../types.ts';
 import { WorkflowCard } from './WorkflowCard.tsx';
 import { SearchIcon } from './icons/SearchIcon.tsx';
@@ -34,14 +33,13 @@ export const WorkflowTracker: React.FC<WorkflowTrackerProps> = ({ workflows, cur
     const matchesStatus = statusFilter === 'all' || w.status === statusFilter;
     return matchesSearch && matchesStatus;
   }).sort((a, b) => {
-      const statusOrder = { 'Overdue': 1, 'In Progress': 2 };
+      const statusOrder: { [key in Workflow['status']]: number } = { 'Overdue': 1, 'Disputed': 2, 'In Progress': 3, 'Completed': 4 };
       if (statusOrder[a.status] !== statusOrder[b.status]) {
           return statusOrder[a.status] - statusOrder[b.status];
       }
       return new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime()
   });
 
-  // Reset visible count and scroll to top when filters change
   useEffect(() => {
     setVisibleCount(INITIAL_LOAD_COUNT);
     if (scrollContainerRef.current) {
@@ -49,7 +47,6 @@ export const WorkflowTracker: React.FC<WorkflowTrackerProps> = ({ workflows, cur
     }
   }, [activeTab, searchTerm, statusFilter]);
 
-  // Infinite scroll observer
   useEffect(() => {
     const scrollContainer = scrollContainerRef.current;
     if (!scrollContainer) return;
@@ -62,7 +59,7 @@ export const WorkflowTracker: React.FC<WorkflowTrackerProps> = ({ workflows, cur
       },
       { 
         root: scrollContainer,
-        rootMargin: '0px 0px 200px 0px', // Trigger when loader is 200px from bottom
+        rootMargin: '0px 0px 200px 0px',
         threshold: 0.01 
       }
     );

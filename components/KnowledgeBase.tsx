@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { DocumentIcon } from './icons/DocumentIcon';
 import { BotIcon } from './icons/BotIcon';
+import { Button } from './ui/Button.tsx';
 
 const TOPICS = [
     { id: 'introduction', title: 'Introduction', icon: <BotIcon className="w-4 h-4" /> },
@@ -127,21 +128,18 @@ export const KnowledgeBase: React.FC = () => {
             {/* Sidebar */}
             <nav className="md:w-1/4 flex-shrink-0">
                 <div className="sticky top-24">
-                    <h2 className="text-lg font-semibold text-white mb-4">Topics</h2>
+                    <h2 className="text-lg font-semibold text-foreground mb-4">Topics</h2>
                     <ul className="space-y-1">
                         {TOPICS.map(topic => (
                             <li key={topic.id}>
-                                <button
+                                <Button
                                     onClick={() => setActiveTopic(topic.id)}
-                                    className={`w-full text-left flex items-center gap-2 px-3 py-2 text-sm rounded-md transition-colors ${
-                                        activeTopic === topic.id
-                                            ? 'bg-blue-600/20 text-blue-300 font-semibold'
-                                            : 'text-slate-400 hover:bg-slate-800 hover:text-slate-200'
-                                    }`}
+                                    variant={activeTopic === topic.id ? 'secondary' : 'ghost'}
+                                    className="w-full justify-start gap-2"
                                 >
                                     {topic.icon}
                                     {topic.title}
-                                </button>
+                                </Button>
                             </li>
                         ))}
                     </ul>
@@ -149,21 +147,21 @@ export const KnowledgeBase: React.FC = () => {
             </nav>
 
             {/* Content */}
-            <main className="md:w-3/4 bg-slate-800/50 rounded-lg shadow-lg border border-slate-700">
+            <main className="md:w-3/4 bg-card rounded-lg shadow-lg border">
                 <TopicContent topicId={activeTopic} />
             </main>
              <style>{`
                 .prose h3 {
-                    color: #cbd5e1; /* slate-300 */
                     font-size: 1.1em;
                     margin-top: 1.5em;
                     margin-bottom: 0.5em;
-                    border-bottom: 1px solid #475569; /* slate-600 */
+                    border-bottom: 1px solid hsl(var(--border));
                     padding-bottom: 0.25em;
+                    color: hsl(var(--card-foreground));
                 }
                 .prose p, .prose ul {
                     margin-bottom: 1em;
-                    color: #94a3b8; /* slate-400 */
+                    color: hsl(var(--muted-foreground));
                 }
                 .prose ul {
                     list-style-type: disc;
@@ -173,17 +171,17 @@ export const KnowledgeBase: React.FC = () => {
                     margin-bottom: 0.5em;
                 }
                 .prose strong {
-                    color: #e2e8f0; /* slate-200 */
+                    color: hsl(var(--foreground));
                 }
                 .prose blockquote {
-                    border-left: 3px solid #6366f1; /* indigo-500 */
+                    border-left: 3px solid hsl(var(--primary));
                     padding-left: 1em;
                     margin-left: 0;
                     font-style: italic;
-                    color: #94a3b8; /* slate-400 */
+                    color: hsl(var(--muted-foreground));
                 }
                 .prose hr {
-                    border-color: #475569; /* slate-600 */
+                    border-color: hsl(var(--border));
                     margin: 2em 0;
                 }
             `}</style>
@@ -198,7 +196,7 @@ interface SectionProps {
 
 const Section: React.FC<SectionProps> = ({ title, children }) => (
     <section className="p-6 md:p-8">
-        <h1 className="text-3xl font-bold text-white mb-6 border-b border-slate-600 pb-3">{title}</h1>
+        <h1 className="text-3xl font-bold text-foreground mb-6 border-b pb-3">{title}</h1>
         <div className="space-y-4 text-sm prose">
             {children}
         </div>

@@ -2,8 +2,8 @@ import React, { createContext, useContext, useEffect, useState } from "react"
 
 type Theme = "dark" | "light" | "system"
 
+// Fix: Removed `children` from props. It will be added by `React.PropsWithChildren` to correctly type the component.
 type ThemeProviderProps = {
-  children: React.ReactNode
   defaultTheme?: Theme
   storageKey?: string
 }
@@ -24,8 +24,7 @@ export function ThemeProvider({
   children,
   defaultTheme = "system",
   storageKey = "vite-ui-theme",
-  ...props
-}: ThemeProviderProps) {
+}: React.PropsWithChildren<ThemeProviderProps>) {
   const [theme, setTheme] = useState<Theme>(
     () => (localStorage.getItem(storageKey) as Theme) || defaultTheme
   )
@@ -57,7 +56,7 @@ export function ThemeProvider({
   }
 
   return (
-    <ThemeProviderContext.Provider {...props} value={value}>
+    <ThemeProviderContext.Provider value={value}>
       {children}
     </ThemeProviderContext.Provider>
   )

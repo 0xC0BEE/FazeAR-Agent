@@ -1,10 +1,10 @@
-
 import React, { useEffect, useState } from 'react';
 // Fix: Corrected import path for types.ts to be explicit.
 import type { Notification as NotificationType } from '../types.ts';
 import { BotIcon } from './icons/BotIcon.tsx';
 import { CheckCircleIcon } from './icons/CheckCircleIcon.tsx';
 import { XIcon } from './icons/XIcon.tsx';
+import { ExclamationIcon } from './icons/ExclamationIcon.tsx';
 
 interface NotificationProps {
     notification: NotificationType;
@@ -29,26 +29,37 @@ const Notification: React.FC<NotificationProps> = ({ notification, onDismiss }) 
     };
 
     const typeClasses = {
-        agent: 'border-purple-500/50',
+        agent: 'border-primary/50',
         success: 'border-green-500/50',
-        error: 'border-red-500/50',
+        error: 'border-destructive/50',
         info: 'border-blue-500/50',
     };
     
     const getIcon = () => {
         switch (notification.type) {
             case 'agent':
-                return <BotIcon className="w-6 h-6 text-purple-400" />;
+                return <BotIcon className="w-6 h-6 text-primary" />;
             case 'success':
-                 return <CheckCircleIcon className="w-6 h-6 text-green-400" />;
+                 return <CheckCircleIcon className="w-6 h-6 text-green-500" />;
+            case 'error':
+                return <ExclamationIcon className="w-6 h-6 text-destructive" />;
             default:
-                return <BotIcon className="w-6 h-6 text-purple-400" />;
+                return <BotIcon className="w-6 h-6 text-blue-500" />;
+        }
+    }
+    
+    const getTitle = () => {
+         switch (notification.type) {
+            case 'agent': return 'Autonomous Agent';
+            case 'success': return 'Success';
+            case 'error': return 'Error';
+            case 'info': return 'Information';
         }
     }
 
     return (
         <div 
-             className={`w-full max-w-sm bg-slate-800 shadow-lg rounded-lg pointer-events-auto ring-1 ring-black ring-opacity-5 overflow-hidden border ${typeClasses[notification.type]} transition-all duration-300 ease-in-out transform ${isExiting ? 'opacity-0 translate-x-full' : 'opacity-100 translate-x-0'}`}
+             className={`w-full max-w-sm bg-popover text-popover-foreground shadow-lg rounded-lg pointer-events-auto ring-1 ring-black ring-opacity-5 overflow-hidden border ${typeClasses[notification.type]} transition-all duration-300 ease-in-out transform ${isExiting ? 'opacity-0 translate-x-full' : 'opacity-100 translate-x-0'}`}
         >
             <div className="p-4">
                 <div className="flex items-start">
@@ -56,17 +67,17 @@ const Notification: React.FC<NotificationProps> = ({ notification, onDismiss }) 
                         {getIcon()}
                     </div>
                     <div className="ml-3 w-0 flex-1 pt-0.5">
-                        <p className="text-sm font-medium text-slate-200">
-                           {notification.type === 'agent' ? 'Autonomous Agent' : 'Notification'}
+                        <p className="text-sm font-medium text-popover-foreground">
+                           {getTitle()}
                         </p>
-                        <p className="mt-1 text-sm text-slate-400">
+                        <p className="mt-1 text-sm text-muted-foreground">
                            {notification.message}
                         </p>
                     </div>
                     <div className="ml-4 flex-shrink-0 flex">
                         <button
                             onClick={handleDismiss}
-                            className="inline-flex text-slate-400 rounded-md hover:text-slate-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                            className="inline-flex text-muted-foreground rounded-md hover:text-foreground focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-ring"
                         >
                             <span className="sr-only">Close</span>
                             <XIcon className="h-5 w-5" />

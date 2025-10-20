@@ -12,10 +12,34 @@ interface WorkflowCardProps {
 }
 
 export const WorkflowCard: React.FC<WorkflowCardProps> = ({ workflow, isSelected, onSelect }) => {
-  const isOverdue = workflow.status === 'Overdue';
+  
+  const getStatusInfo = () => {
+      switch (workflow.status) {
+          case 'Overdue':
+              return {
+                  text: 'Overdue',
+                  color: 'text-destructive',
+                  bg: 'bg-destructive/10',
+                  icon: <ExclamationIcon className="w-3 h-3"/>
+              };
+          case 'Disputed':
+              return {
+                  text: 'Disputed',
+                  color: 'text-amber-600 dark:text-amber-400',
+                  bg: 'bg-amber-500/10',
+                  icon: <ExclamationIcon className="w-3 h-3"/>
+              };
+          default:
+              return {
+                  text: 'In Progress',
+                  color: 'text-muted-foreground',
+                  bg: 'bg-muted',
+                  icon: null
+              };
+      }
+  }
 
-  const statusColor = isOverdue ? 'text-red-500 dark:text-red-400' : 'text-amber-500 dark:text-amber-400';
-  const statusBg = isOverdue ? 'bg-red-500/10' : 'bg-amber-500/10';
+  const statusInfo = getStatusInfo();
   
   const cardClasses = `w-full p-3 text-left transition-all duration-200 flex flex-col items-start border rounded-lg bg-card border-border hover:bg-accent ${isSelected ? 'bg-primary/10 border-primary hover:bg-primary/20' : ''}`;
 
@@ -26,9 +50,9 @@ export const WorkflowCard: React.FC<WorkflowCardProps> = ({ workflow, isSelected
     >
       <div className="flex justify-between items-start w-full">
         <h3 className={`font-bold text-base ${isSelected ? 'text-primary' : 'text-card-foreground'}`}>{workflow.clientName}</h3>
-        <div className={`flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded-full ${statusBg} ${statusColor}`}>
-           {isOverdue && <ExclamationIcon className="w-3 h-3"/>}
-           <span>{workflow.status}</span>
+        <div className={`flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded-full ${statusInfo.bg} ${statusInfo.color}`}>
+           {statusInfo.icon}
+           <span>{statusInfo.text}</span>
         </div>
       </div>
       <div className="mt-2 space-y-1.5 text-sm text-muted-foreground">

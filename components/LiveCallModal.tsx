@@ -1,18 +1,16 @@
 import React, { useState, useEffect, useRef } from 'react';
-// Fix: Removed non-exported member `LiveSession`.
 import { LiveServerMessage, Modality, Blob } from '@google/genai';
 import { v4 as uuidv4 } from 'uuid';
 import type { Workflow, ChatMessage } from '../types.ts';
-import { XIcon } from './icons/XIcon.tsx';
 import { PhoneIcon } from './icons/PhoneIcon.tsx';
 import { SpinnerIcon } from './icons/SpinnerIcon.tsx';
 import { BotIcon } from './icons/BotIcon.tsx';
 import { UserIcon } from './icons/UserIcon.tsx';
 import { NoteIcon } from './icons/NoteIcon.tsx';
 import { startLiveConversation, summarizeConversation } from '../services/geminiService.ts';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogClose, DialogDescription } from './ui/Dialog.tsx';
+import { Button } from './ui/Button.tsx';
 
-// Fix: Infer LiveSession type from the return type of startLiveConversation
-// since it's not directly exported from the @google/genai library.
 type LiveSession = Awaited<ReturnType<typeof startLiveConversation>>;
 
 // Audio decoding helpers from Gemini docs
@@ -108,7 +106,6 @@ export const LiveCallModal: React.FC<LiveCallModalProps> = ({ isOpen, onClose, w
         setCallState('connecting');
         
         try {
-            // Fix: Use a type cast to `any` to allow `webkitAudioContext` for older browser compatibility without causing a TypeScript error.
             outputAudioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)({ sampleRate: 24000 });
             
             const sessionPromise = startLiveConversation(workflow, {
@@ -130,7 +127,6 @@ export const LiveCallModal: React.FC<LiveCallModalProps> = ({ isOpen, onClose, w
     };
 
     const setupMicrophone = async (sessionPromise: Promise<LiveSession>) => {
-        // Fix: Use a type cast to `any` to allow `webkitAudioContext` for older browser compatibility without causing a TypeScript error.
         inputAudioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)({ sampleRate: 16000 });
         streamRef.current = await navigator.mediaDevices.getUserMedia({ audio: true });
 
@@ -229,15 +225,15 @@ export const LiveCallModal: React.FC<LiveCallModalProps> = ({ isOpen, onClose, w
             case 'connecting':
                 return (
                     <div className="text-center">
-                        <PhoneIcon className="w-16 h-16 text-slate-500 mx-auto mb-4"/>
-                        <h3 className="text-lg font-semibold text-white">AI Live Call Simulation</h3>
-                        <p className="text-sm text-slate-400 mt-2 mb-6">
+                        <PhoneIcon className="w-16 h-16 text-muted-foreground mx-auto mb-4"/>
+                        <h3 className="text-lg font-semibold text-foreground">AI Live Call Simulation</h3>
+                        <p className="text-sm text-muted-foreground mt-2 mb-6">
                             Initiate a simulated AI-powered call with an agent playing the role of the client to discuss this invoice. Your microphone will be used.
                         </p>
-                         <button onClick={handleStartCall} disabled={callState === 'connecting'} className="w-full flex items-center justify-center gap-2 bg-green-600 hover:bg-green-700 text-white font-semibold py-2 px-4 rounded-lg transition-colors disabled:bg-slate-600">
+                         <Button onClick={handleStartCall} disabled={callState === 'connecting'} className="w-full bg-green-600 hover:bg-green-700">
                              {callState === 'connecting' ? <SpinnerIcon className="w-5 h-5 animate-spin"/> : <PhoneIcon className="w-5 h-5"/>}
-                            {callState === 'connecting' ? 'Connecting...' : 'Start Call'}
-                        </button>
+                            <span className="ml-2">{callState === 'connecting' ? 'Connecting...' : 'Start Call'}</span>
+                        </Button>
                     </div>
                 );
             case 'active':
@@ -245,30 +241,30 @@ export const LiveCallModal: React.FC<LiveCallModalProps> = ({ isOpen, onClose, w
             case 'ended':
                  return (
                     <div className="flex flex-col h-[60vh]">
-                        <div className="flex-1 p-4 overflow-y-auto space-y-4 bg-slate-900/50 rounded-lg">
+                        <div className="flex-1 p-4 overflow-y-auto space-y-4 bg-muted/50 rounded-lg border">
                             {transcript.map((msg) => (
                                 <div key={msg.id} className={`flex gap-3 ${msg.role === 'user' ? 'justify-end' : ''}`}>
-                                     {msg.role === 'model' && <div className="w-8 h-8 rounded-full bg-slate-700 flex items-center justify-center flex-shrink-0"><BotIcon className="w-5 h-5 text-purple-400" /></div>}
+                                     {msg.role === 'model' && <div className="w-8 h-8 rounded-full bg-secondary flex items-center justify-center flex-shrink-0"><BotIcon className="w-5 h-5 text-primary" /></div>}
                                      <div className={`max-w-md w-full ${msg.role === 'user' ? 'text-right' : ''}`}>
-                                        <div className={`inline-block p-3 rounded-lg ${msg.role === 'user' ? 'bg-blue-600 text-white' : 'bg-slate-700 text-slate-300'}`}>
+                                        <div className={`inline-block p-3 rounded-lg ${msg.role === 'user' ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'}`}>
                                             <p className="whitespace-pre-wrap">{msg.content}</p>
                                         </div>
                                      </div>
-                                     {msg.role === 'user' && <div className="w-8 h-8 rounded-full bg-slate-700 flex items-center justify-center flex-shrink-0"><UserIcon className="w-5 h-5 text-slate-400" /></div>}
+                                     {msg.role === 'user' && <div className="w-8 h-8 rounded-full bg-secondary flex items-center justify-center flex-shrink-0"><UserIcon className="w-5 h-5 text-muted-foreground" /></div>}
                                 </div>
                             ))}
                              <div ref={transcriptEndRef} />
                         </div>
                         {callState === 'summarizing' && (
                             <div className="text-center p-4">
-                                <SpinnerIcon className="w-6 h-6 animate-spin mx-auto text-slate-400"/>
-                                <p className="text-sm text-slate-400 mt-2">Generating call summary...</p>
+                                <SpinnerIcon className="w-6 h-6 animate-spin mx-auto text-muted-foreground"/>
+                                <p className="text-sm text-muted-foreground mt-2">Generating call summary...</p>
                             </div>
                         )}
                         {callState === 'ended' && (
-                             <div className="mt-4 p-4 border-t border-slate-700">
-                                <h4 className="text-sm font-semibold text-slate-300 mb-2">Call Summary</h4>
-                                <div className="text-sm text-slate-300 bg-slate-800 p-3 rounded-md whitespace-pre-wrap max-h-32 overflow-y-auto">
+                             <div className="mt-4">
+                                <h4 className="text-sm font-semibold text-foreground mb-2">Call Summary</h4>
+                                <div className="text-sm text-foreground bg-muted p-3 rounded-md whitespace-pre-wrap max-h-32 overflow-y-auto border">
                                     {summary}
                                 </div>
                              </div>
@@ -279,34 +275,36 @@ export const LiveCallModal: React.FC<LiveCallModalProps> = ({ isOpen, onClose, w
     }
 
     return (
-        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 transition-opacity duration-300" onClick={onClose}>
-            <div className="bg-slate-800 rounded-lg shadow-xl w-full max-w-2xl m-4 border border-slate-700 transform transition-transform duration-300 scale-100 flex flex-col" onClick={e => e.stopPropagation()}>
-                <div className="p-4 flex justify-between items-center border-b border-slate-700">
-                    <div>
-                        <h2 className="text-lg font-semibold text-white">Live Call: {workflow.clientName}</h2>
-                        <p className="text-sm text-slate-400">Invoice <span className="font-mono">{workflow.externalId}</span> - <span className="font-mono">${workflow.amount.toLocaleString()}</span></p>
-                    </div>
-                     {callState === 'active' && <div className="flex items-center gap-2 text-sm text-red-400 font-semibold"><div className="w-2 h-2 bg-red-500 rounded-full animate-pulse"></div>LIVE</div>}
-                    <button onClick={onClose} className="text-slate-400 hover:text-white transition-colors"><XIcon className="w-6 h-6" /></button>
-                </div>
+        <Dialog open={isOpen} onOpenChange={onClose}>
+            <DialogContent className="max-w-2xl">
+                <DialogHeader>
+                    <DialogTitle>Live Call: {workflow.clientName}</DialogTitle>
+                    <DialogDescription>
+                        Invoice <span className="font-mono">{workflow.externalId}</span> - <span className="font-mono">${workflow.amount.toLocaleString()}</span>
+                         {callState === 'active' && <div className="inline-flex items-center gap-2 text-sm text-red-500 font-semibold ml-4"><div className="w-2 h-2 bg-red-500 rounded-full animate-pulse"></div>LIVE</div>}
+                    </DialogDescription>
+                </DialogHeader>
 
-                <div className="p-6">
+                <div className="py-4">
                     {renderContent()}
                 </div>
 
-                <div className="p-4 bg-slate-900/50 border-t border-slate-700 flex justify-end gap-2">
+                <DialogFooter>
                    {callState === 'active' && (
-                        <button onClick={() => handleEndCall()} className="bg-red-600 hover:bg-red-700 text-white font-semibold px-4 py-2 rounded-md text-sm transition-colors">
+                        <Button onClick={() => handleEndCall()} variant="destructive">
                             End Call
-                        </button>
+                        </Button>
                    )}
                    {callState === 'ended' && (
-                        <button onClick={handleAddSummaryToNotes} className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold px-4 py-2 rounded-md text-sm transition-colors">
-                            <NoteIcon className="w-4 h-4" /> Add Summary to Notes
-                        </button>
+                       <>
+                        <DialogClose asChild><Button variant="ghost">Close</Button></DialogClose>
+                        <Button onClick={handleAddSummaryToNotes}>
+                            <NoteIcon className="w-4 h-4 mr-2" /> Add Summary to Notes
+                        </Button>
+                       </>
                    )}
-                </div>
-            </div>
-        </div>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
     );
 };

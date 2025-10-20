@@ -21,6 +21,7 @@ interface DashboardProps {
     onInitiateCall: (workflow: Workflow) => void;
     pendingMatches: Match[] | null;
     onClearPendingMatches: () => void;
+    users: User[];
 }
 
 export const Dashboard: React.FC<DashboardProps> = ({ 
@@ -39,7 +40,8 @@ export const Dashboard: React.FC<DashboardProps> = ({
     onViewInvoice,
     onInitiateCall,
     pendingMatches,
-    onClearPendingMatches
+    onClearPendingMatches,
+    users
 }) => {
     const [selectedWorkflowId, setSelectedWorkflowId] = useState<string | null>(null);
 
@@ -74,7 +76,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
             <div className="lg:col-span-4 h-full overflow-hidden">
                 <InspectorPanel
                     workflow={selectedWorkflow}
-                    users={[]} // Note: Users prop is available if needed for assignee dropdowns
+                    users={users}
                     settings={settings}
                     onAnalyzeRemittance={onAnalyzeRemittance}
                     onConfirmMatches={onConfirmMatches}

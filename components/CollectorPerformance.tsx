@@ -1,9 +1,14 @@
-
-
 import React from 'react';
-// Fix: Corrected import path for types.ts to be explicit.
 import type { Workflow, User } from '../types.ts';
 import { UserIcon } from './icons/UserIcon.tsx';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "./ui/Table.tsx";
 
 interface CollectorPerformanceProps {
     workflows: Workflow[];
@@ -51,41 +56,41 @@ export const CollectorPerformance: React.FC<CollectorPerformanceProps> = ({ work
     const collectors = users.filter(u => u.role === 'Collector' || u.role === 'Manager');
 
     return (
-        <div className="bg-slate-800 rounded-lg shadow-lg p-4 md:p-6 border border-slate-700">
-            <h3 className="text-lg font-semibold text-white mb-4">Collector Performance Report</h3>
+        <div className="bg-card rounded-lg shadow-lg p-4 md:p-6 border">
+            <h3 className="text-lg font-semibold text-card-foreground mb-4">Collector Performance Report</h3>
             <div className="overflow-x-auto">
-                <table className="w-full text-sm text-left text-slate-300">
-                    <thead className="text-xs text-slate-400 uppercase bg-slate-700/50">
-                        <tr>
-                            <th scope="col" className="px-6 py-3">Collector</th>
-                            <th scope="col" className="px-6 py-3 text-right">Open Workflows</th>
-                            <th scope="col" className="px-6 py-3 text-right">Assigned AR</th>
-                            <th scope="col" className="px-6 py-3 text-right">Collected (All Time)</th>
-                            <th scope="col" className="px-6 py-3 text-right">Avg. Days to Collect</th>
-                        </tr>
-                    </thead>
-                    <tbody>
+                <Table>
+                    <TableHeader>
+                        <TableRow>
+                            <TableHead>Collector</TableHead>
+                            <TableHead className="text-right">Open Workflows</TableHead>
+                            <TableHead className="text-right">Assigned AR</TableHead>
+                            <TableHead className="text-right">Collected (All Time)</TableHead>
+                            <TableHead className="text-right">Avg. Days to Collect</TableHead>
+                        </TableRow>
+                    </TableHeader>
+                    <TableBody>
                         {collectors.map((collector) => {
                             const stats = calculateStats(collector.name);
                             return (
-                                <tr key={collector.id} className="bg-slate-800 border-b border-slate-700 hover:bg-slate-700/50">
-                                    <td className="px-6 py-4 font-semibold text-white whitespace-nowrap">
+                                <TableRow key={collector.id}>
+                                    <TableCell className="font-medium">
                                         <div className="flex items-center gap-2">
-                                            <UserIcon className="w-5 h-5 text-slate-400" />
+                                            <UserIcon className="w-5 h-5 text-muted-foreground" />
                                             {collector.name}
                                         </div>
-                                    </td>
-                                    <td className="px-6 py-4 text-right">{stats.openWorkflows}</td>
-                                    <td className="px-6 py-4 text-right font-mono">${stats.totalAssigned.toLocaleString()}</td>
-                                    <td className="px-6 py-4 text-right font-mono">${stats.amountCollected.toLocaleString()}</td>
-                                    <td className="px-6 py-4 text-right font-mono">
+                                    </TableCell>
+                                    <TableCell className="text-right">{stats.openWorkflows}</TableCell>
+                                    <TableCell className="text-right font-mono">${stats.totalAssigned.toLocaleString()}</TableCell>
+                                    <TableCell className="text-right font-mono">${stats.amountCollected.toLocaleString()}</TableCell>
+                                    <TableCell className="text-right font-mono">
                                         {stats.avgDaysToCollect !== null ? `${stats.avgDaysToCollect} days` : 'N/A'}
-                                    </td>
-                                </tr>
+                                    </TableCell>
+                                </TableRow>
                             );
                         })}
-                    </tbody>
-                </table>
+                    </TableBody>
+                </Table>
             </div>
         </div>
     );
