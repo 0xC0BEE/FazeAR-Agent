@@ -1,7 +1,5 @@
 
-
-
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { v4 as uuidv4 } from 'uuid';
 import { Header } from './components/Header.tsx';
 import { Dashboard } from './components/Dashboard.tsx';
@@ -72,10 +70,14 @@ const App: React.FC = () => {
             initializeAi(apiKey);
         }
     }, [apiKey]);
-
+    
+    const addNotification = useCallback((type: NotificationType['type'], message: string) => {
+        const newNotification: NotificationType = { id: uuidv4(), type, message };
+        setNotifications(prev => [newNotification, ...prev]);
+    }, []);
+    
     // Autonomous agent simulation
     useEffect(() => {
-        // Fix: Changed NodeJS.Timeout to number, which is the correct type for setInterval in a browser environment.
         let interval: number | undefined;
         if (isGlobalAutonomous) {
             interval = setInterval(() => {
@@ -110,13 +112,8 @@ const App: React.FC = () => {
             }, 7000);
         }
         return () => clearInterval(interval);
-    }, [isGlobalAutonomous, workflows, settings.dunningPlans, currentUser.name]);
+    }, [isGlobalAutonomous, workflows, settings, currentUser, addNotification, setWorkflows]);
     
-    const addNotification = (type: NotificationType['type'], message: string) => {
-        const newNotification: NotificationType = { id: uuidv4(), type, message };
-        setNotifications(prev => [newNotification, ...prev]);
-    };
-
     const dismissNotification = (id: string) => {
         setNotifications(prev => prev.filter(n => n.id !== id));
     };
