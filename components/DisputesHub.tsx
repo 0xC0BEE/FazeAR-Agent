@@ -65,7 +65,7 @@ const DisputeColumn: React.FC<{
             onDrop={handleDrop}
         >
             <h3 className="font-semibold text-sm text-foreground mb-3 px-1 flex-shrink-0">{title} ({workflows.length})</h3>
-            <div className="space-y-3 flex-1 overflow-y-auto">
+            <div className="space-y-3 flex-1 overflow-y-auto min-h-0">
                 {children}
             </div>
         </div>

@@ -1,4 +1,5 @@
 
+
 import React, { useState, useEffect, useCallback } from 'react';
 import { v4 as uuidv4 } from 'uuid';
 import { Header } from './components/Header.tsx';
@@ -513,7 +514,7 @@ const App: React.FC = () => {
                 />
             </header>
             <main className="flex-1 p-4 sm:p-6 lg:p-8 pt-6 overflow-hidden flex flex-col">
-                <div className="max-w-screen-2xl mx-auto w-full flex-1">
+                <div className="max-w-screen-2xl mx-auto w-full flex-1 flex flex-col min-h-0">
                     {currentView()}
                 </div>
             </main>
