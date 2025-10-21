@@ -20,9 +20,9 @@ const DisputeCard: React.FC<{ workflow: Workflow, onOpen: () => void }> = ({ wor
 
 const DisputeColumn: React.FC<{ title: string; workflows: Workflow[]; children: React.ReactNode }> = ({ title, workflows, children }) => {
     return (
-        <div className="w-full sm:w-1/2 md:w-1/4 flex-shrink-0 flex flex-col bg-muted/50 rounded-lg p-3">
-            <h3 className="font-semibold text-sm text-foreground mb-3 px-1">{title} ({workflows.length})</h3>
-            <div className="space-y-3 h-full overflow-y-auto">
+        <div className="flex flex-col bg-muted/50 rounded-lg p-3 h-full">
+            <h3 className="font-semibold text-sm text-foreground mb-3 px-1 flex-shrink-0">{title} ({workflows.length})</h3>
+            <div className="space-y-3 flex-1 overflow-y-auto">
                 {children}
             </div>
         </div>
@@ -52,13 +52,13 @@ export const DisputesHub: React.FC<DisputesHubProps> = ({ disputedWorkflows, onO
 
   return (
     <div className="h-full flex flex-col">
-        <div className="pb-4">
+        <div className="pb-4 flex-shrink-0">
             <h2 className="text-2xl font-bold text-foreground">Disputes Hub</h2>
             <p className="text-muted-foreground">Manage and resolve client invoice disputes.</p>
         </div>
         <div className="flex-1 flex flex-col md:flex-row gap-4 overflow-x-auto">
             {columns.map(col => (
-                <div key={col.status} className="w-full sm:w-1/2 md:w-1/4 flex-shrink-0 border-r border-border last:border-r-0 pr-4 last:pr-0">
+                <div key={col.status} className="w-full sm:w-1/2 md:w-1/4 flex-shrink-0">
                     <DisputeColumn title={col.title} workflows={workflowsByStatus(col.status)}>
                         {workflowsByStatus(col.status).map(wf => (
                             <DisputeCard key={wf.id} workflow={wf} onOpen={() => onOpenDispute(wf)} />
