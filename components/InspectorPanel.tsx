@@ -187,7 +187,7 @@ export const InspectorPanel: React.FC<InspectorPanelProps> = ({
       </div>
 
       {/* Tab Content */}
-      <div className="flex-grow overflow-y-auto">
+      <div className="flex-grow overflow-y-auto min-h-0">
         {actionTab === 'actions' && (
             <div className="p-4 space-y-4">
                 {/* Details */}

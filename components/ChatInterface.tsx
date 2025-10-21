@@ -64,7 +64,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ messages, isLoadin
         <h2 className="text-lg font-semibold text-card-foreground">AI Assistant</h2>
         <p className="text-sm text-muted-foreground">Your copilot for accounts receivable.</p>
       </div>
-      <div className="flex-1 p-4 overflow-y-auto space-y-4">
+      <div className="flex-1 p-4 overflow-y-auto space-y-4 min-h-0">
         {messages.map((msg, index) => (
           <div key={msg.id || index} className={`flex gap-3 ${msg.role === 'user' ? 'justify-end' : ''}`}>
             {msg.role !== 'user' && (

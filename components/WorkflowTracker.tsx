@@ -126,7 +126,7 @@ export const WorkflowTracker: React.FC<WorkflowTrackerProps> = ({ workflows, cur
             </button>
         </nav>
       </div>
-      <div ref={scrollContainerRef} className="flex-1 p-4 overflow-y-auto space-y-2">
+      <div ref={scrollContainerRef} className="flex-1 p-4 overflow-y-auto space-y-2 min-h-0">
         <div className="px-1 pb-2 text-xs text-muted-foreground italic">
             Showing {filteredWorkflows.length} {getStatusText()} workflow{filteredWorkflows.length !== 1 && 's'} in "{activeTab === 'my' ? 'My Queue' : 'All Active'}".
         </div>
