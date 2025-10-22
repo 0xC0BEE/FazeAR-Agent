@@ -1,12 +1,15 @@
 
 
+
+
 import React, { useState, useEffect, useCallback } from 'react';
+// Fix: Corrected UUID import alias to fix multiple reference errors.
 import { v4 as uuidv4 } from 'uuid';
 import { Header } from './components/Header.tsx';
 import { Dashboard } from './components/Dashboard.tsx';
 import { SettingsModal } from './components/SettingsModal.tsx';
 import { NotificationToaster } from './components/NotificationToaster.tsx';
-import { MOCK_USERS, MOCK_WORKFLOWS, MOCK_SETTINGS } from './mockData.ts';
+import { MOCK_USERS, MOCK_WORKFLOWS, MOCK_SETTINGS, MOCK_REMITTANCE_ADVICE } from './mockData.ts';
 // Fix: Import the centralized 'View' type.
 import type { User, Workflow, ChatMessage, Settings, Notification as NotificationType, Tone, Match, DisputeStatus, View } from './types.ts';
 import { generateChatResponse, analyzeRemittanceAdvice, runAnalyticsQuery, generateWhatIfScenario, initializeAi } from './services/geminiService.ts';
@@ -77,7 +80,7 @@ const App: React.FC = () => {
         setNotifications(prev => [newNotification, ...prev]);
     }, []);
     
-    // Autonomous agent simulation
+    // Autonomous dunning agent simulation
     useEffect(() => {
         let interval: number | undefined;
         if (isGlobalAutonomous) {
@@ -114,6 +117,40 @@ const App: React.FC = () => {
         }
         return () => clearInterval(interval);
     }, [isGlobalAutonomous, workflows, settings, currentUser, addNotification, setWorkflows]);
+
+    const handleAutomatedRemittanceAnalysis = useCallback(async (text: string) => {
+        addNotification('agent', `Agent detected new remittance advice and is analyzing it...`);
+        try {
+            const matches = await analyzeRemittanceAdvice(text, workflows);
+            if (matches && matches.length > 0) {
+                setPendingMatches(matches);
+                addNotification('success', `Agent found ${matches.length} potential payment matches. Review them in the 'Cash App' panel.`);
+            } else {
+                addNotification('info', `Agent analyzed remittance advice but found no matches.`);
+            }
+        } catch (error) {
+            console.error('Error during automated remittance analysis:', error);
+            addNotification('error', 'Agent failed to analyze remittance advice.');
+        }
+    }, [workflows, addNotification]);
+
+    // Autonomous email scanning simulation
+    useEffect(() => {
+        let interval: number | undefined;
+        const isGmailConnected = settings.integrations.find(i => i.id === 'gmail')?.connected;
+
+        if (isGmailConnected) {
+            // Check for new emails periodically
+            interval = setInterval(() => {
+                // Simulate a 10% chance of finding a new email every 15 seconds
+                if (Math.random() < 0.1) {
+                    handleAutomatedRemittanceAnalysis(MOCK_REMITTANCE_ADVICE);
+                }
+            }, 15000); 
+        }
+
+        return () => clearInterval(interval);
+    }, [settings.integrations, handleAutomatedRemittanceAnalysis]);
     
     const dismissNotification = (id: string) => {
         setNotifications(prev => prev.filter(n => n.id !== id));
@@ -363,22 +400,6 @@ const App: React.FC = () => {
     const handleSaveApiKey = (key: string) => {
         sessionStorage.setItem('gemini-api-key', key);
         setApiKey(key);
-    };
-
-    const handleAutomatedRemittanceAnalysis = async (text: string) => {
-        addNotification('agent', `Agent detected new remittance advice and is analyzing it...`);
-        try {
-            const matches = await analyzeRemittanceAdvice(text, workflows);
-            if (matches && matches.length > 0) {
-                setPendingMatches(matches);
-                addNotification('success', `Agent found ${matches.length} potential payment matches. Review them in the 'Cash App' panel.`);
-            } else {
-                addNotification('info', `Agent analyzed remittance advice but found no matches.`);
-            }
-        } catch (error) {
-            console.error('Error during automated remittance analysis:', error);
-            addNotification('error', 'Agent failed to analyze remittance advice.');
-        }
     };
 
     const handleSimulatedEvent = (type: string, data: any) => {

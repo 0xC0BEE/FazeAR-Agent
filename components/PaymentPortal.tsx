@@ -13,6 +13,8 @@ interface PaymentPortalProps {
     onDispute: (workflowId: string, reason: string, clientName: string) => void;
 }
 
+const HISTORY_BATCH_SIZE = 5;
+
 const PaymentModal: React.FC<{ invoice: Workflow, onClose: () => void, onSuccess: () => void }> = ({ invoice, onClose, onSuccess }) => {
     const [isLoading, setIsLoading] = useState(false);
 
@@ -63,6 +65,7 @@ export const PaymentPortal: React.FC<PaymentPortalProps> = ({ user, workflows, o
     const [disputeSuccess, setDisputeSuccess] = useState(false);
     const [payingInvoice, setPayingInvoice] = useState<Workflow | null>(null);
     const [disputingInvoice, setDisputingInvoice] = useState<Workflow | null>(null);
+    const [visibleHistoryCount, setVisibleHistoryCount] = useState(HISTORY_BATCH_SIZE);
 
     const openInvoices = workflows.filter(w => w.status !== 'Completed');
     const closedInvoices = workflows.filter(w => w.status === 'Completed');
@@ -88,6 +91,10 @@ export const PaymentPortal: React.FC<PaymentPortalProps> = ({ user, workflows, o
         if (status === 'Disputed') return <span className="px-2 py-0.5 text-xs font-semibold rounded-full bg-yellow-100 text-yellow-800 dark:bg-yellow-900/50 dark:text-yellow-300">Disputed</span>;
         if (status === 'Overdue') return <span className="px-2 py-0.5 text-xs font-semibold rounded-full bg-destructive/10 text-destructive">Overdue</span>;
         return <span className="px-2 py-0.5 text-xs font-semibold rounded-full bg-blue-100 text-blue-800 dark:bg-blue-900/50 dark:text-blue-300">In Progress</span>;
+    }
+    
+    const handleLoadMore = () => {
+        setVisibleHistoryCount(prev => prev + HISTORY_BATCH_SIZE);
     }
 
     return (
@@ -187,7 +194,7 @@ export const PaymentPortal: React.FC<PaymentPortalProps> = ({ user, workflows, o
                             </tr>
                         </thead>
                          <tbody className="text-foreground">
-                            {closedInvoices.slice(0, 5).map(invoice => (
+                            {closedInvoices.slice(0, visibleHistoryCount).map(invoice => (
                                 <tr key={invoice.id} className="border-b border-border last:border-b-0">
                                     <td className="px-6 py-4 font-mono">{invoice.externalId}</td>
                                     <td className="px-6 py-4">{invoice.paymentDate ? new Date(invoice.paymentDate).toLocaleDateString() : 'N/A'}</td>
@@ -205,6 +212,13 @@ export const PaymentPortal: React.FC<PaymentPortalProps> = ({ user, workflows, o
                         </tbody>
                     </table>
                 </div>
+                 {visibleHistoryCount < closedInvoices.length && (
+                    <div className="p-4 text-center border-t">
+                        <Button variant="link" onClick={handleLoadMore}>
+                            Load More
+                        </Button>
+                    </div>
+                )}
             </div>
 
             {payingInvoice && (

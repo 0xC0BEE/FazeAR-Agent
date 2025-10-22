@@ -7,6 +7,7 @@ import { LinkIcon } from './icons/LinkIcon.tsx';
 import { CheckCircleIcon } from './icons/CheckCircleIcon.tsx';
 import { WebhookListener } from './WebhookListener.tsx';
 import { Button } from './ui/Button.tsx';
+import { BotIcon } from './icons/BotIcon.tsx';
 
 interface IntegrationsHubProps {
   settings: Settings;
@@ -45,6 +46,12 @@ const IntegrationCard: React.FC<{ integration: Integration, onToggle: (id: Integ
                 </div>
             </div>
             <p className="text-sm text-muted-foreground flex-grow">{integration.description}</p>
+            {integration.connected && integration.id === 'gmail' && (
+                <div className="mt-4 text-xs text-green-600 dark:text-green-400 bg-green-500/10 p-2 rounded-md flex items-center gap-2">
+                    <BotIcon className="w-4 h-4 flex-shrink-0" />
+                    <span>Automated remittance scanning is active.</span>
+                </div>
+            )}
             <div className="mt-6">
                 <Button
                     onClick={() => onToggle(integration.id)}
