@@ -2,6 +2,8 @@
 
 
 
+
+
 import React, { useState, useEffect, useCallback } from 'react';
 // Fix: Corrected UUID import alias to fix multiple reference errors.
 import { v4 as uuidv4 } from 'uuid';
@@ -535,7 +537,7 @@ const App: React.FC = () => {
                 />
             </header>
             <main className="flex-1 p-4 sm:p-6 lg:p-8 pt-6 overflow-hidden flex flex-col">
-                <div className="max-w-screen-2xl mx-auto w-full flex-1 flex flex-col min-h-0">
+                <div className="max-w-screen-2xl mx-auto w-full flex-1 flex flex-col min-h-0 overflow-y-auto">
                     {currentView()}
                 </div>
             </main>

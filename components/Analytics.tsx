@@ -1,4 +1,5 @@
 
+
 import React from 'react';
 // Fix: Corrected import path for types.ts to be explicit.
 import type { Workflow, User } from '../types.ts';
@@ -16,7 +17,7 @@ interface AnalyticsProps {
 
 export const Analytics: React.FC<AnalyticsProps> = ({ workflows, users, scenarioWorkflows, onClearScenario }) => {
   return (
-    <main className="flex flex-col gap-6">
+    <div className="flex flex-col gap-6">
       <AIInsights />
       <div className="space-y-6">
         <CashFlowChart 
@@ -27,6 +28,6 @@ export const Analytics: React.FC<AnalyticsProps> = ({ workflows, users, scenario
         <AgingReport workflows={workflows} />
         <CollectorPerformance workflows={workflows} users={users} />
       </div>
-    </main>
+    </div>
   );
 };
